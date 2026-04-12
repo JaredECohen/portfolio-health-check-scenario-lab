@@ -1,0 +1,25 @@
+services:
+  - type: web
+    name: portfolio-health-check-backend
+    env: docker
+    dockerContext: ./backend
+    dockerfilePath: ./backend/Dockerfile
+    envVars:
+      - key: OPENAI_API_KEY
+        sync: false
+      - key: ALPHA_VANTAGE_API_KEY
+        sync: false
+      - key: SEC_USER_AGENT
+        sync: false
+      - key: PORTFOLIO_API_CORS_ORIGINS
+        value: https://portfolio-health-check-frontend.onrender.com
+  - type: web
+    name: portfolio-health-check-frontend
+    runtime: static
+    rootDir: frontend
+    buildCommand: npm install && npm run build
+    staticPublishPath: dist
+    envVars:
+      - key: VITE_API_BASE_URL
+        value: https://portfolio-health-check-backend.onrender.com
+

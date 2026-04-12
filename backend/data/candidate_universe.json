@@ -1,0 +1,18 @@
+[
+  {"ticker": "MSFT", "company_name": "Microsoft Corp", "cik": "0000789019", "exchange": "Nasdaq", "sector": "Technology", "asset_type": "Equity"},
+  {"ticker": "GOOGL", "company_name": "Alphabet Inc", "cik": "0001652044", "exchange": "Nasdaq", "sector": "Communication Services", "asset_type": "Equity"},
+  {"ticker": "AMZN", "company_name": "Amazon.com Inc", "cik": "0001018724", "exchange": "Nasdaq", "sector": "Consumer Discretionary", "asset_type": "Equity"},
+  {"ticker": "JPM", "company_name": "JPMorgan Chase & Co", "cik": "0000019617", "exchange": "NYSE", "sector": "Financial Services", "asset_type": "Equity"},
+  {"ticker": "XOM", "company_name": "Exxon Mobil Corp", "cik": "0000034088", "exchange": "NYSE", "sector": "Energy", "asset_type": "Equity"},
+  {"ticker": "LLY", "company_name": "Eli Lilly & Co", "cik": "0000059478", "exchange": "NYSE", "sector": "Healthcare", "asset_type": "Equity"},
+  {"ticker": "UNH", "company_name": "UnitedHealth Group Inc", "cik": "0000731766", "exchange": "NYSE", "sector": "Healthcare", "asset_type": "Equity"},
+  {"ticker": "CAT", "company_name": "Caterpillar Inc", "cik": "0000018230", "exchange": "NYSE", "sector": "Industrials", "asset_type": "Equity"},
+  {"ticker": "RTX", "company_name": "RTX Corp", "cik": "0000101829", "exchange": "NYSE", "sector": "Industrials", "asset_type": "Equity"},
+  {"ticker": "NEE", "company_name": "NextEra Energy Inc", "cik": "0000753308", "exchange": "NYSE", "sector": "Utilities", "asset_type": "Equity"},
+  {"ticker": "PG", "company_name": "Procter & Gamble Co", "cik": "0000080424", "exchange": "NYSE", "sector": "Consumer Staples", "asset_type": "Equity"},
+  {"ticker": "KO", "company_name": "Coca-Cola Co", "cik": "0000021344", "exchange": "NYSE", "sector": "Consumer Staples", "asset_type": "Equity"},
+  {"ticker": "LIN", "company_name": "Linde plc", "cik": "0001707925", "exchange": "Nasdaq", "sector": "Materials", "asset_type": "Equity"},
+  {"ticker": "SHW", "company_name": "Sherwin-Williams Co", "cik": "0000089800", "exchange": "NYSE", "sector": "Materials", "asset_type": "Equity"},
+  {"ticker": "PLD", "company_name": "Prologis Inc", "cik": "0001045609", "exchange": "NYSE", "sector": "Real Estate", "asset_type": "Equity"}
+]
+
