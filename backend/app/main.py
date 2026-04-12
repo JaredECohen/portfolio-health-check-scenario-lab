@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -11,6 +13,8 @@ from app.routes.api import router as api_router, get_database
 settings = get_settings()
 get_database().initialize()
 settings.artifacts_dir.mkdir(parents=True, exist_ok=True)
+if settings.openai_api_key:
+    os.environ.setdefault("OPENAI_API_KEY", settings.openai_api_key)
 
 app = FastAPI(
     title="Portfolio Health Check + Research Overlay + Scenario Lab",
@@ -25,4 +29,3 @@ app.add_middleware(
 )
 app.include_router(api_router)
 app.mount("/artifacts", StaticFiles(directory=settings.artifacts_dir), name="artifacts")
-

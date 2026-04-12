@@ -86,7 +86,11 @@ class AnalyticsService:
         upper_triangle = holding_correlation.where(
             np.triu(np.ones(holding_correlation.shape), k=1).astype(bool)
         )
-        pairwise_values = upper_triangle.stack().tolist()
+        pairwise_values = [
+            float(value)
+            for value in upper_triangle.stack().tolist()
+            if value is not None and np.isfinite(value)
+        ]
         average_pairwise_corr = float(np.mean(pairwise_values)) if pairwise_values else 0.0
 
         trailing_return = float((portfolio_value.iloc[-1] / portfolio_value.iloc[0]) - 1)
@@ -258,4 +262,3 @@ class AnalyticsService:
                 )
             )
         return metrics
-
