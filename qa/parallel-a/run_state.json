@@ -1,0 +1,9 @@
+{
+  "target_runs": 100,
+  "attempted": 100,
+  "completed": 97,
+  "shard_index": 0,
+  "shard_count": 2,
+  "updated_at": "2026-04-14T07:14:39.187828+00:00",
+  "backend_started_by_harness": false
+}

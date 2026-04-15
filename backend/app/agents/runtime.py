@@ -26,8 +26,10 @@ from app.tools.agent_tools import (
     collect_earnings_overlay_data,
     collect_filings_overlay_data,
     compute_macro_overlay,
+    deterministic_text_nlp,
     rank_candidate_positions,
     run_dynamic_eda,
+    shortlist_candidate_universe,
 )
 
 
@@ -65,21 +67,21 @@ class AgentRuntime:
             name="earnings_overlay",
             model="gpt-5.4-mini",
             instructions=EARNINGS_OVERLAY_PROMPT,
-            tools=[collect_earnings_overlay_data],
+            tools=[collect_earnings_overlay_data, deterministic_text_nlp],
             output_type=earnings_output,
         )
         self.filings_overlay = Agent(
             name="filings_overlay",
             model="gpt-5.4-mini",
             instructions=FILINGS_OVERLAY_PROMPT,
-            tools=[collect_filings_overlay_data],
+            tools=[collect_filings_overlay_data, deterministic_text_nlp],
             output_type=filings_output,
         )
         self.candidate_search = Agent(
             name="candidate_search",
             model="gpt-5.4-mini",
             instructions=CANDIDATE_SEARCH_PROMPT,
-            tools=[rank_candidate_positions],
+            tools=[shortlist_candidate_universe, rank_candidate_positions],
             output_type=candidate_output,
         )
         self.writer = Agent(

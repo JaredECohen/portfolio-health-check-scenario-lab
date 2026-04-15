@@ -2,20 +2,24 @@ from __future__ import annotations
 
 import json
 import re
+from collections import Counter
 from dataclasses import dataclass
+from datetime import date
 
-import pandas as pd
 from agents import RunContextWrapper, function_tool
 
 from app.models.schemas import (
     AnalysisPlan,
     CandidateSearchResult,
     DynamicEDAResult,
+    EntityFrequency,
     EarningsOverlayResult,
     EarningsOverlayTickerResult,
     FilingsOverlayResult,
     FilingsOverlayTickerResult,
     MacroOverlayResult,
+    NLPTextSummary,
+    TopicCluster,
 )
 from app.services.analytics import AnalyticsBundle
 from app.services.dynamic_eda import DynamicEDAService
@@ -34,6 +38,8 @@ class AnalysisRunContext:
     lookback_days: int
     benchmark_symbol: str
     hypothetical_present: bool
+    start_date: date | None
+    end_date: date | None
 
 
 def _extract_tone(text: str) -> str:
@@ -58,6 +64,150 @@ def _extract_findings(text: str, patterns: dict[str, str]) -> list[str]:
     return findings[:5]
 
 
+STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "has",
+    "have",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "their",
+    "this",
+    "to",
+    "was",
+    "we",
+    "with",
+    "our",
+    "you",
+    "your",
+}
+
+POSITIVE_TERMS = (
+    "strong",
+    "improve",
+    "improved",
+    "improvement",
+    "upside",
+    "momentum",
+    "growth",
+    "resilient",
+    "disciplined",
+)
+
+CAUTIOUS_TERMS = (
+    "cautious",
+    "pressure",
+    "softness",
+    "uncertain",
+    "uncertainty",
+    "headwind",
+    "risk",
+    "weaker",
+    "volatile",
+)
+
+TOPIC_KEYWORDS = {
+    "guidance": {"guidance", "outlook", "forecast", "expect"},
+    "demand": {"demand", "orders", "order", "volume", "customers", "pipeline"},
+    "profitability": {"margin", "margins", "profit", "profitability", "cost", "pricing"},
+    "liquidity": {"liquidity", "cash", "credit", "debt", "leverage", "interest"},
+    "regulation": {"regulatory", "compliance", "government", "tariff", "privacy", "antitrust"},
+    "operations": {"supply", "capacity", "inventory", "manufacturing", "operations"},
+}
+
+ENTITY_EXCLUSIONS = {
+    "GAAP",
+    "EPS",
+    "CEO",
+    "CFO",
+    "SEC",
+    "INC",
+    "CORP",
+    "Q1",
+    "Q2",
+    "Q3",
+    "Q4",
+}
+
+
+def _normalize_text(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _tokenize_words(text: str) -> list[str]:
+    return re.findall(r"\b[a-z][a-z'-]{2,}\b", text.lower())
+
+
+def _extract_keywords_from_text(text: str, *, limit: int = 8) -> list[str]:
+    tokens = [token for token in _tokenize_words(text) if token not in STOPWORDS]
+    counts = Counter(tokens)
+    return [term for term, _count in sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]]
+
+
+def _extract_entities_from_text(text: str, *, limit: int = 8) -> list[EntityFrequency]:
+    matches = re.findall(r"\b(?:[A-Z]{2,5}|[A-Z][a-z]+(?:\s+[A-Z][a-z]+){0,2})\b", text)
+    counts = Counter(
+        match.strip()
+        for match in matches
+        if match.strip().upper() not in ENTITY_EXCLUSIONS and len(match.strip()) > 1
+    )
+    ranked = sorted(counts.items(), key=lambda item: (-item[1], item[0]))[:limit]
+    return [EntityFrequency(entity=name, count=count) for name, count in ranked]
+
+
+def _extract_topic_clusters_from_text(text: str, *, limit: int = 4) -> list[TopicCluster]:
+    sentences = re.split(r"(?<=[.!?])\s+", _normalize_text(text))
+    clusters: list[TopicCluster] = []
+    for topic, keywords in TOPIC_KEYWORDS.items():
+        hits = []
+        hit_keywords: Counter[str] = Counter()
+        for sentence in sentences:
+            sentence_lower = sentence.lower()
+            matched = [keyword for keyword in keywords if re.search(rf"\b{re.escape(keyword)}\b", sentence_lower)]
+            if matched:
+                hits.append(sentence[:220])
+                hit_keywords.update(matched)
+        if hits:
+            clusters.append(
+                TopicCluster(
+                    topic=topic,
+                    mentions=len(hits),
+                    keywords=[term for term, _count in hit_keywords.most_common(3)],
+                    representative_text=hits[0],
+                )
+            )
+    return sorted(clusters, key=lambda item: (-item.mentions, item.topic))[:limit]
+
+
+def summarize_text_nlp(text: str) -> NLPTextSummary:
+    normalized = _normalize_text(text)
+    lowered = normalized.lower()
+    sentiment_counts = {
+        "positive": sum(len(re.findall(rf"\b{re.escape(term)}\b", lowered)) for term in POSITIVE_TERMS),
+        "cautious": sum(len(re.findall(rf"\b{re.escape(term)}\b", lowered)) for term in CAUTIOUS_TERMS),
+    }
+    return NLPTextSummary(
+        sentiment_counts=sentiment_counts,
+        keywords=_extract_keywords_from_text(normalized),
+        entities=_extract_entities_from_text(normalized),
+        topic_clusters=_extract_topic_clusters_from_text(normalized),
+    )
+
+
 @function_tool
 async def run_dynamic_eda(context: RunContextWrapper[AnalysisRunContext]) -> str:
     result = await context.context.dynamic_eda_service.execute(
@@ -70,56 +220,56 @@ async def run_dynamic_eda(context: RunContextWrapper[AnalysisRunContext]) -> str
 
 @function_tool
 async def compute_macro_overlay(context: RunContextWrapper[AnalysisRunContext]) -> str:
-    alpha_vantage = context.context.scenario_service.alpha_vantage
     question_type = context.context.plan.question_type.value.replace("_", " ")
     try:
-        treasury = await alpha_vantage.get_treasury_yield()
-        wti = await alpha_vantage.get_wti()
-        cpi = await alpha_vantage.get_cpi()
-        aligned = pd.concat(
-            [
-                context.context.baseline_bundle.portfolio_returns.rename("portfolio"),
-                context.context.baseline_bundle.benchmark_returns.rename("benchmark"),
-                treasury["value"].diff().rename("yield_change"),
-                wti["value"].pct_change().rename("oil_change"),
-            ],
-            axis=1,
-        ).dropna()
-        cpi_yoy = None
-        if len(cpi.index) >= 13:
-            cpi_yoy = float((cpi["value"].iloc[-1] / cpi["value"].iloc[-13]) - 1)
-        treasury_corr_portfolio = float(aligned["portfolio"].corr(aligned["yield_change"]))
-        treasury_corr_benchmark = float(aligned["benchmark"].corr(aligned["yield_change"]))
-        oil_corr_portfolio = float(aligned["portfolio"].corr(aligned["oil_change"]))
-        oil_corr_benchmark = float(aligned["benchmark"].corr(aligned["oil_change"]))
-        findings = [
-            f"Portfolio correlation to 10Y yield changes is {treasury_corr_portfolio:.2f} versus {treasury_corr_benchmark:.2f} for the benchmark.",
-            f"Portfolio correlation to daily WTI moves is {oil_corr_portfolio:.2f} versus {oil_corr_benchmark:.2f} for the benchmark.",
-        ]
-        if cpi_yoy is not None:
-            findings.append(f"Latest CPI year-over-year change in the macro feed is {cpi_yoy * 100:.2f}%.")
+        regime_analysis = await context.context.dynamic_eda_service.analyze_rates_regimes(
+            context.context.baseline_bundle
+        )
+        if regime_analysis is None:
+            raise ValueError("No usable rates regime analysis was produced.")
+        findings = []
+        up_stats = regime_analysis.get("yield_up")
+        down_stats = regime_analysis.get("yield_down")
+        if up_stats is not None:
+            findings.append(
+                f"On {up_stats['days']} yield-up shock days (>= {up_stats['threshold_bps']:.2f} bps in the 10Y), the portfolio averaged {up_stats['avg_same_day_excess'] * 100:.2f}% excess return versus SPY."
+            )
+            findings.append(
+                f"Average 5-day excess return after yield-up shocks was {(up_stats['avg_forward_5d_excess'] or 0.0) * 100:.2f}%."
+            )
+        if down_stats is not None:
+            findings.append(
+                f"On {down_stats['days']} yield-down shock days (<= {down_stats['threshold_bps']:.2f} bps in the 10Y), the portfolio averaged {down_stats['avg_same_day_excess'] * 100:.2f}% excess return versus SPY."
+            )
+            findings.append(
+                f"Average 10-day excess return after yield-down shocks was {(down_stats['avg_forward_10d_excess'] or 0.0) * 100:.2f}%."
+            )
+        findings.append(
+            "This macro overlay is based on conditional rate-shock regimes and forward windows, not broad unconditional correlation."
+        )
         payload = MacroOverlayResult(
             question_focus=question_type,
-            series_used=["TREASURY_YIELD", "CPI", "WTI"],
+            series_used=["TREASURY_YIELD"],
             findings=findings,
             portfolio_sensitivities={
-                "treasury_yield_corr": treasury_corr_portfolio,
-                "oil_corr": oil_corr_portfolio,
+                "yield_up_same_day_excess": float(up_stats["avg_same_day_excess"]) if up_stats else 0.0,
+                "yield_up_forward_5d_excess": float(up_stats["avg_forward_5d_excess"] or 0.0) if up_stats else 0.0,
+                "yield_down_forward_10d_excess": float(down_stats["avg_forward_10d_excess"] or 0.0) if down_stats else 0.0,
                 "beta_vs_benchmark": context.context.baseline_bundle.metrics_map["beta_vs_benchmark"],
             },
             benchmark_sensitivities={
-                "treasury_yield_corr": treasury_corr_benchmark,
-                "oil_corr": oil_corr_benchmark,
+                "yield_up_same_day_return": float(up_stats["avg_same_day_benchmark"]) if up_stats else 0.0,
+                "yield_down_same_day_return": float(down_stats["avg_same_day_benchmark"]) if down_stats else 0.0,
             },
             caveats=[
-                "Macro overlay is based on empirical co-movement and proxy regimes, not a forecast model.",
-                "CPI is monthly, so inflation context is lower-frequency than daily market returns.",
+                "Rates interpretation is conditional on the recent sample window and percentile-based shock thresholds.",
+                "This is still empirical regime analysis, not a structural duration or factor model.",
             ],
         )
     except Exception:  # noqa: BLE001
         payload = MacroOverlayResult(
             question_focus=question_type,
-            series_used=["TREASURY_YIELD", "CPI", "WTI"],
+            series_used=["TREASURY_YIELD"],
             findings=["Macro series were unavailable or could not be aligned for this run."],
             portfolio_sensitivities={},
             benchmark_sensitivities={},
@@ -128,6 +278,11 @@ async def compute_macro_overlay(context: RunContextWrapper[AnalysisRunContext]) 
             ],
         )
     return payload.model_dump_json()
+
+
+@function_tool
+async def deterministic_text_nlp(text: str) -> str:
+    return summarize_text_nlp(text).model_dump_json()
 
 
 @function_tool
@@ -145,15 +300,23 @@ async def collect_earnings_overlay_data(
             ),
             ticker,
         )
-        transcript = await context.context.scenario_service.alpha_vantage.get_latest_earnings_transcript(
-            ticker
-        )
+        if context.context.start_date or context.context.end_date:
+            transcript = await context.context.scenario_service.alpha_vantage.get_windowed_earnings_transcript(
+                ticker,
+                start_date=context.context.start_date,
+                end_date=context.context.end_date,
+            )
+        else:
+            transcript = await context.context.scenario_service.alpha_vantage.get_latest_earnings_transcript(
+                ticker
+            )
         if not transcript:
             results.append(
                 EarningsOverlayTickerResult(
                     ticker=ticker,
                     company_name=company,
                     quarter=None,
+                    event_date=None,
                     tone="unavailable",
                     findings=["Transcript not available from Alpha Vantage for recent quarters."],
                     transcript_available=False,
@@ -177,8 +340,10 @@ async def collect_earnings_overlay_data(
                 ticker=ticker,
                 company_name=company,
                 quarter=transcript["quarter"],
+                event_date=transcript.get("event_date"),
                 tone=tone,
                 findings=findings or ["Transcript retrieved, but no targeted language cluster stood out."],
+                nlp_summary=summarize_text_nlp(joined),
             )
         )
     return EarningsOverlayResult(companies=results).model_dump_json()
@@ -205,7 +370,14 @@ async def collect_filings_overlay_data(
                 )
             )
             continue
-        filing = await context.context.sec_edgar_service.get_recent_filing(holding.cik)
+        if context.context.start_date or context.context.end_date:
+            filing = await context.context.sec_edgar_service.get_recent_filing(
+                holding.cik,
+                start_date=context.context.start_date,
+                end_date=context.context.end_date,
+            )
+        else:
+            filing = await context.context.sec_edgar_service.get_recent_filing(holding.cik)
         if not filing:
             results.append(
                 FilingsOverlayTickerResult(
@@ -229,18 +401,42 @@ async def collect_filings_overlay_data(
                 form_type=filing["form_type"],
                 filed_at=filing["filed_at"],
                 findings=findings or ["Recent filing retrieved without a dominant flagged theme."],
+                nlp_summary=summarize_text_nlp(filing_text),
             )
         )
     return FilingsOverlayResult(companies=results).model_dump_json()
 
 
 @function_tool
-async def rank_candidate_positions(context: RunContextWrapper[AnalysisRunContext]) -> str:
+async def shortlist_candidate_universe(
+    context: RunContextWrapper[AnalysisRunContext],
+    preferred_sectors: list[str] | None = None,
+    excluded_sectors: list[str] | None = None,
+    max_candidates: int = 20,
+) -> str:
+    result = context.context.scenario_service.shortlist_universe(
+        baseline_bundle=context.context.baseline_bundle,
+        objective=context.context.plan.objective,
+        preferred_sectors=preferred_sectors,
+        excluded_sectors=excluded_sectors,
+        max_candidates=max_candidates,
+    )
+    return json.dumps(result)
+
+
+@function_tool
+async def rank_candidate_positions(
+    context: RunContextWrapper[AnalysisRunContext],
+    tickers: list[str] | None = None,
+) -> str:
     result = await context.context.scenario_service.rank_candidates(
         baseline_bundle=context.context.baseline_bundle,
         benchmark_symbol=context.context.benchmark_symbol,
         objective=context.context.plan.objective,
         lookback_days=context.context.lookback_days,
+        start_date=context.context.start_date,
+        end_date=context.context.end_date,
+        candidate_tickers=tickers,
         max_candidates=5,
     )
     return result.model_dump_json()

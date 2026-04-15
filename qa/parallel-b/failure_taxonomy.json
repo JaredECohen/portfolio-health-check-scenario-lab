@@ -1,0 +1,44 @@
+{
+  "attempted_runs": 100,
+  "completed_runs": 94,
+  "target_runs": 100,
+  "issue_counts": [
+    [
+      "warnings_present",
+      94
+    ],
+    [
+      "missing_candidate_search",
+      14
+    ],
+    [
+      "technical_failure",
+      6
+    ],
+    [
+      "planner_mismatch",
+      3
+    ]
+  ],
+  "category_scores": {
+    "benchmark_underperformance": 4.66,
+    "concentration_diversification": 4.68,
+    "drawdown_risk": 4.4,
+    "earnings_overlay": 4.4,
+    "filings_overlay": 4.66,
+    "general_health": 4.66,
+    "geopolitical_war": 4.71,
+    "macro_sensitivity": 4.71,
+    "messy_natural_language": 4.71,
+    "performance_drivers": 4.66,
+    "rates_macro": 4.71,
+    "risk_adjusted_returns": 4.76,
+    "sector_diversification": 4.685,
+    "what_if_addition": 4.76,
+    "windowed": 0.0
+  },
+  "portfolio_scores": {
+    "cache_growth_barbell": 4.396,
+    "cache_tech_core": 4.406
+  }
+}

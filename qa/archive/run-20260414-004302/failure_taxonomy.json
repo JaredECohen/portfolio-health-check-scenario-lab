@@ -1,0 +1,66 @@
+{
+  "attempted_runs": 100,
+  "completed_runs": 94,
+  "target_runs": 100,
+  "issue_counts": [
+    [
+      "sparse_eda",
+      20
+    ],
+    [
+      "planner_mismatch",
+      15
+    ],
+    [
+      "technical_failure",
+      6
+    ],
+    [
+      "missing_candidate_search",
+      4
+    ],
+    [
+      "warnings_present",
+      1
+    ]
+  ],
+  "category_scores": {
+    "benchmark_underperformance": 4.74,
+    "concentration_diversification": 4.813,
+    "drawdown_risk": 4.316,
+    "earnings_overlay": 4.21,
+    "filings_overlay": 4.74,
+    "general_health": 4.74,
+    "geopolitical_war": 4.54,
+    "macro_sensitivity": 4.79,
+    "messy_natural_language": 4.708,
+    "performance_drivers": 4.73,
+    "rates_macro": 4.191,
+    "risk_adjusted_returns": 4.19,
+    "sector_diversification": 4.826,
+    "what_if_addition": 4.3,
+    "windowed": 0.0
+  },
+  "portfolio_scores": {
+    "cache_all_weatherish": 4.602,
+    "cache_balanced": 4.704,
+    "cache_barbell": 4.672,
+    "cache_big_tech_plus": 4.672,
+    "cache_defensive_growth": 3.704,
+    "cache_drawdown_test": 3.704,
+    "cache_energy_finance": 2.756,
+    "cache_energy_hedge": 3.714,
+    "cache_five_name": 3.628,
+    "cache_growth_barbell": 4.576,
+    "cache_health_focus": 4.578,
+    "cache_health_quality": 4.452,
+    "cache_high_beta": 4.694,
+    "cache_macro_mix": 4.606,
+    "cache_momentum": 4.43,
+    "cache_platforms": 4.556,
+    "cache_quality": 4.568,
+    "cache_rates_sensitive": 4.634,
+    "cache_tech_core": 4.72,
+    "cache_ten_name": 4.72
+  }
+}

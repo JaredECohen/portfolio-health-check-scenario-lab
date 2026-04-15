@@ -1,7 +1,7 @@
 import { startTransition, useMemo, useState } from "react";
 import { SearchableTickerInput } from "./components/SearchableTickerInput";
 import { ResultsPanel } from "./components/ResultsPanel";
-import { analyzePortfolio } from "./lib/api";
+import { analyzePortfolio, getTickerDetails } from "./lib/api";
 import type { AnalysisResponse, HoldingRow, HypotheticalInput, TickerMetadata } from "./types";
 
 const QUESTION_EXAMPLES = [
@@ -22,6 +22,8 @@ export default function App() {
     { ticker: "XOM", shares: "30", cost_basis: "110", company_name: "Exxon Mobil Corp", sector: "Energy" },
   ]);
   const [question, setQuestion] = useState(QUESTION_EXAMPLES[0]);
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [hypothetical, setHypothetical] = useState<HypotheticalInput>({
     ticker: "",
     shares: "",
@@ -37,6 +39,15 @@ export default function App() {
   );
 
   async function handleAnalyze() {
+    const hasHypotheticalSize = Boolean(hypothetical.shares) || Boolean(hypothetical.target_weight);
+    if (hypothetical.ticker && !hasHypotheticalSize) {
+      setError("Hypothetical addition requires either shares or target weight.");
+      return;
+    }
+    if (hypothetical.shares && hypothetical.target_weight) {
+      setError("Hypothetical addition must use shares or target weight, not both.");
+      return;
+    }
     setLoading(true);
     setError(null);
     try {
@@ -53,7 +64,9 @@ export default function App() {
         question,
         benchmark: "SPY",
         lookback_days: 252,
-        hypothetical_position: hypothetical.ticker
+        start_date: startDate || null,
+        end_date: endDate || null,
+        hypothetical_position: hypothetical.ticker && hasHypotheticalSize
           ? {
               ticker: hypothetical.ticker,
               shares: hypothetical.shares ? Number(hypothetical.shares) : null,
@@ -76,21 +89,48 @@ export default function App() {
     }
   }
 
-  function updateHolding(index: number, ticker: TickerMetadata) {
+  async function updateHolding(index: number, ticker: TickerMetadata) {
+    let resolvedTicker = ticker;
+    if (!ticker.sector) {
+      try {
+        resolvedTicker = await getTickerDetails(ticker.ticker);
+      } catch {
+        resolvedTicker = ticker;
+      }
+    }
     setHoldings((current) =>
       current.map((item, itemIndex) =>
         itemIndex === index
           ? {
               ...item,
-              ticker: ticker.ticker,
-              company_name: ticker.company_name,
-              sector: ticker.sector || "Unknown",
-              cik: ticker.cik,
-              exchange: ticker.exchange,
+              ticker: resolvedTicker.ticker,
+              company_name: resolvedTicker.company_name,
+              sector: resolvedTicker.sector || "Unknown",
+              cik: resolvedTicker.cik,
+              exchange: resolvedTicker.exchange,
             }
           : item,
       ),
     );
+  }
+
+  async function updateHypothetical(ticker: TickerMetadata) {
+    let resolvedTicker = ticker;
+    if (!ticker.sector) {
+      try {
+        resolvedTicker = await getTickerDetails(ticker.ticker);
+      } catch {
+        resolvedTicker = ticker;
+      }
+    }
+    setHypothetical((current) => ({
+      ...current,
+      ticker: resolvedTicker.ticker,
+      company_name: resolvedTicker.company_name,
+      sector: resolvedTicker.sector || "Unknown",
+      cik: resolvedTicker.cik,
+      exchange: resolvedTicker.exchange,
+    }));
   }
 
   return (
@@ -117,57 +157,70 @@ export default function App() {
             </button>
           </div>
           <div className="position-table">
-            <div className="position-table__head">
-              <span>Ticker</span>
-              <span>Shares</span>
-              <span>Cost basis</span>
-              <span>Company</span>
-              <span>Sector</span>
-              <span />
-            </div>
             {holdings.map((holding, index) => (
               <div className="position-table__row" key={`holding-${index}`}>
-                <SearchableTickerInput
-                  value={holding.ticker}
-                  onSelect={(ticker) => updateHolding(index, ticker)}
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={holding.shares}
-                  onChange={(event) =>
-                    setHoldings((current) =>
-                      current.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, shares: event.target.value } : item,
-                      ),
-                    )
-                  }
-                />
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={holding.cost_basis}
-                  onChange={(event) =>
-                    setHoldings((current) =>
-                      current.map((item, itemIndex) =>
-                        itemIndex === index ? { ...item, cost_basis: event.target.value } : item,
-                      ),
-                    )
-                  }
-                />
-                <div className="readout">{holding.company_name || "Auto-fill"}</div>
-                <div className="readout">{holding.sector || "Auto-fill"}</div>
-                <button
-                  type="button"
-                  className="row-action"
-                  onClick={() =>
-                    setHoldings((current) => current.filter((_, itemIndex) => itemIndex !== index))
-                  }
-                >
-                  Remove
-                </button>
+                <div className="position-table__topline">
+                  <div className="field-group field-group--ticker">
+                    <span className="field-label">Ticker</span>
+                    <SearchableTickerInput
+                      value={holding.ticker}
+                      onSelect={(ticker) => void updateHolding(index, ticker)}
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    className="row-action"
+                    onClick={() =>
+                      setHoldings((current) => current.filter((_, itemIndex) => itemIndex !== index))
+                    }
+                  >
+                    Remove
+                  </button>
+                </div>
+                <div className="position-table__metrics">
+                  <label className="field-group">
+                    <span className="field-label">Shares</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={holding.shares}
+                      onChange={(event) =>
+                        setHoldings((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, shares: event.target.value } : item,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                  <label className="field-group">
+                    <span className="field-label">Cost basis</span>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      value={holding.cost_basis}
+                      onChange={(event) =>
+                        setHoldings((current) =>
+                          current.map((item, itemIndex) =>
+                            itemIndex === index ? { ...item, cost_basis: event.target.value } : item,
+                          ),
+                        )
+                      }
+                    />
+                  </label>
+                </div>
+                <div className="position-table__meta">
+                  <div className="readout readout--stacked">
+                    <span className="field-label">Company</span>
+                    <strong>{holding.company_name || "Auto-fill after ticker selection"}</strong>
+                  </div>
+                  <div className="readout readout--stacked">
+                    <span className="field-label">Sector</span>
+                    <strong>{holding.sector || "Auto-fill after ticker selection"}</strong>
+                  </div>
+                </div>
               </div>
             ))}
           </div>
@@ -178,16 +231,7 @@ export default function App() {
           <div className="hypothetical-grid">
             <SearchableTickerInput
               value={hypothetical.ticker}
-              onSelect={(ticker) =>
-                setHypothetical((current) => ({
-                  ...current,
-                  ticker: ticker.ticker,
-                  company_name: ticker.company_name,
-                  sector: ticker.sector || "Unknown",
-                  cik: ticker.cik,
-                  exchange: ticker.exchange,
-                }))
-              }
+              onSelect={(ticker) => void updateHypothetical(ticker)}
             />
             <input
               type="number"
@@ -195,8 +239,13 @@ export default function App() {
               step="0.01"
               placeholder="Shares"
               value={hypothetical.shares}
+              disabled={Boolean(hypothetical.target_weight)}
               onChange={(event) =>
-                setHypothetical((current) => ({ ...current, shares: event.target.value }))
+                setHypothetical((current) => ({
+                  ...current,
+                  shares: event.target.value,
+                  target_weight: event.target.value ? "" : current.target_weight,
+                }))
               }
             />
             <input
@@ -206,8 +255,13 @@ export default function App() {
               step="0.01"
               placeholder="Target weight (0.05)"
               value={hypothetical.target_weight}
+              disabled={Boolean(hypothetical.shares)}
               onChange={(event) =>
-                setHypothetical((current) => ({ ...current, target_weight: event.target.value }))
+                setHypothetical((current) => ({
+                  ...current,
+                  target_weight: event.target.value,
+                  shares: event.target.value ? "" : current.shares,
+                }))
               }
             />
           </div>
@@ -215,6 +269,34 @@ export default function App() {
 
         <section className="panel">
           <h2>Question</h2>
+          <div className="hypothetical-grid">
+            <label className="field-group">
+              <span className="field-label">Start date (optional)</span>
+              <input
+                type="date"
+                value={startDate}
+                max={endDate || undefined}
+                onChange={(event) => setStartDate(event.target.value)}
+              />
+            </label>
+            <label className="field-group">
+              <span className="field-label">End date (optional)</span>
+              <input
+                type="date"
+                value={endDate}
+                min={startDate || undefined}
+                onChange={(event) => setEndDate(event.target.value)}
+              />
+            </label>
+            <div className="readout readout--stacked">
+              <span className="field-label">Window behavior</span>
+              <strong>
+                {startDate || endDate
+                  ? "Dates are optional. If you set one or both, portfolio analytics and overlays use that bounded window only."
+                  : "Dates are optional. Leaving both blank uses the default trailing 252-trading-day window."}
+              </strong>
+            </div>
+          </div>
           <textarea
             rows={5}
             value={question}

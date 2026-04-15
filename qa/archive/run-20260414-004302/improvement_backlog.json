@@ -1,0 +1,30 @@
+[
+  {
+    "issue": "sparse_eda",
+    "count": 20,
+    "priority": 1,
+    "title": "Increase question-specific EDA depth",
+    "reason": "Thin EDA makes memos feel generic."
+  },
+  {
+    "issue": "planner_mismatch",
+    "count": 15,
+    "priority": 1,
+    "title": "Tighten planner routing",
+    "reason": "Planner misclassifications reduce trust and lead to irrelevant workflows."
+  },
+  {
+    "issue": "missing_candidate_search",
+    "count": 4,
+    "priority": 1,
+    "title": "Harden candidate-search activation",
+    "reason": "Users asking what to add should consistently get screened candidates."
+  },
+  {
+    "issue": "warnings_present",
+    "count": 1,
+    "priority": 3,
+    "title": "Classify and reduce degraded-mode runs",
+    "reason": "Frequent warnings indicate reliability or coverage gaps."
+  }
+]

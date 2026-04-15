@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 from functools import lru_cache
+import logging
+from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 
@@ -9,11 +11,14 @@ from app.config import Settings, get_settings
 from app.database import Database
 from app.models.schemas import AnalysisResponse, PortfolioInput, TickerMetadata
 from app.services.analytics import AnalyticsService
-from app.services.alpha_vantage import AlphaVantageService
+from app.services.alpha_vantage import AlphaVantageError, AlphaVantageService
 from app.services.artifacts import ArtifactService
 from app.services.cache import CacheService
 from app.services.dynamic_eda import DynamicEDAService
+from app.services.eia import EIAService
+from app.services.feature_store import FeatureStore
 from app.services.market_data import MarketDataService
+from app.services.news_intel import NewsIntelService
 from app.services.orchestration import PortfolioAnalysisOrchestrator
 from app.services.portfolio_intake import PortfolioIntakeError, PortfolioIntakeService
 from app.services.scenario import ScenarioService
@@ -22,6 +27,7 @@ from app.services.ticker_metadata import TickerMetadataService
 
 
 router = APIRouter(prefix="/api")
+logger = logging.getLogger(__name__)
 
 
 @lru_cache(maxsize=1)
@@ -46,22 +52,49 @@ def get_alpha_vantage_service() -> AlphaVantageService:
     return AlphaVantageService(settings.alpha_vantage_api_key, get_cache_service())
 
 
+def get_eia_service() -> EIAService:
+    settings = get_settings()
+    return EIAService(settings.eia_api_key, get_cache_service())
+
+
+def get_news_intel_service() -> NewsIntelService:
+    return NewsIntelService(
+        alpha_vantage=get_alpha_vantage_service(),
+        cache=get_cache_service(),
+    )
+
+
+def get_feature_store() -> FeatureStore:
+    return FeatureStore(get_database())
+
+
 def get_orchestrator(settings: Settings = Depends(get_settings)) -> PortfolioAnalysisOrchestrator:
     analytics_service = AnalyticsService()
     alpha_vantage = get_alpha_vantage_service()
+    eia_service = get_eia_service()
+    news_intel_service = get_news_intel_service()
+    feature_store = get_feature_store()
     ticker_metadata = get_ticker_metadata_service()
+    sec_edgar_service = SecEdgarService(settings.sec_user_agent, get_cache_service())
     return PortfolioAnalysisOrchestrator(
         intake_service=PortfolioIntakeService(ticker_metadata, alpha_vantage),
         market_data_service=MarketDataService(alpha_vantage),
         analytics_service=analytics_service,
-        dynamic_eda_service=DynamicEDAService(alpha_vantage),
+        dynamic_eda_service=DynamicEDAService(
+            alpha_vantage,
+            eia_service=eia_service,
+            news_intel_service=news_intel_service,
+            feature_store=feature_store,
+            sec_edgar_service=sec_edgar_service,
+            ticker_metadata_service=ticker_metadata,
+        ),
         scenario_service=ScenarioService(
             analytics_service=analytics_service,
             alpha_vantage=alpha_vantage,
             ticker_metadata=ticker_metadata,
             candidate_universe_path=settings.candidate_universe_path,
         ),
-        sec_edgar_service=SecEdgarService(settings.sec_user_agent, get_cache_service()),
+        sec_edgar_service=sec_edgar_service,
         artifact_service=ArtifactService(get_database(), settings.artifacts_dir),
         agent_runtime=AgentRuntime(),
         risk_free_fallback=settings.risk_free_fallback,
@@ -88,7 +121,16 @@ async def get_ticker(ticker: str) -> TickerMetadata:
     result = service.get(ticker)
     if result is None:
         raise HTTPException(status_code=404, detail="Ticker not found")
-    return result
+    if result.sector:
+        return result
+    alpha_vantage = get_alpha_vantage_service()
+    try:
+        overview = await alpha_vantage.get_company_overview(result.ticker)
+    except AlphaVantageError:
+        return result
+    sector = overview.get("Sector") or result.sector
+    exchange = overview.get("Exchange") or result.exchange
+    return result.model_copy(update={"sector": sector, "exchange": exchange})
 
 
 @router.post("/analyze", response_model=AnalysisResponse)
@@ -101,5 +143,12 @@ async def analyze_portfolio(
     except PortfolioIntakeError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     except Exception as exc:  # noqa: BLE001
-        raise HTTPException(status_code=500, detail=str(exc)) from exc
-
+        request_id = uuid4().hex[:12]
+        logger.exception("Portfolio analysis failed [request_id=%s]", request_id, exc_info=exc)
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "message": "Analysis failed due to an internal error. Please retry.",
+                "request_id": request_id,
+            },
+        ) from exc

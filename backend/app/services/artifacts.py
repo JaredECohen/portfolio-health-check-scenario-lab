@@ -14,6 +14,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from fastapi.encoders import jsonable_encoder
 
 from app.database import Database
 from app.models.schemas import ArtifactRecord, BaselineAnalytics, DynamicEDAResult, FinalMemo, ScenarioAnalytics
@@ -42,7 +43,7 @@ class ArtifactService:
         session_dir = self.create_session_dir(session_id)
         filename = f"{kind}.json"
         target = session_dir / filename
-        target.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+        target.write_text(self._json_text(payload, indent=2), encoding="utf-8")
         return self._register_artifact(session_id=session_id, kind=kind, title=title, path=target)
 
     def save_markdown_memo(
@@ -77,6 +78,39 @@ class ArtifactService:
             title="Final memo",
             path=target,
         )
+
+    def save_dataframe_artifact(
+        self,
+        *,
+        session_id: str,
+        kind: str,
+        title: str,
+        frame: pd.DataFrame,
+        metadata: dict | None = None,
+    ) -> list[ArtifactRecord]:
+        session_dir = self.create_session_dir(session_id)
+        csv_target = session_dir / f"{kind}.csv"
+        frame.to_csv(csv_target, index=False)
+        records = [
+            self._register_artifact(
+                session_id=session_id,
+                kind=kind,
+                title=title,
+                path=csv_target,
+            )
+        ]
+        if metadata is not None:
+            metadata_target = session_dir / f"{kind}_metadata.json"
+            metadata_target.write_text(self._json_text(metadata, indent=2), encoding="utf-8")
+            records.append(
+                self._register_artifact(
+                    session_id=session_id,
+                    kind=f"{kind}_metadata",
+                    title=f"{title} metadata",
+                    path=metadata_target,
+                )
+            )
+        return records
 
     def generate_baseline_charts(
         self,
@@ -150,9 +184,9 @@ class ArtifactService:
                     session_id,
                     datetime.now(UTC).isoformat(),
                     question,
-                    json.dumps(portfolio_json),
-                    json.dumps(plan_json),
-                    json.dumps(result_json),
+                    self._json_text(portfolio_json),
+                    self._json_text(plan_json),
+                    self._json_text(result_json),
                 ),
             )
 
@@ -257,7 +291,11 @@ class ArtifactService:
                     kind,
                     str(path),
                     datetime.now(UTC).isoformat(),
-                    json.dumps({"title": title}),
+                    self._json_text({"title": title}),
                 ),
             )
         return record
+
+    @staticmethod
+    def _json_text(payload: object, *, indent: int | None = None) -> str:
+        return json.dumps(jsonable_encoder(payload), indent=indent)

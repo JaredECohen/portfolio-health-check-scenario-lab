@@ -22,7 +22,26 @@ export async function analyzePortfolio(payload: unknown): Promise<AnalysisRespon
   });
   if (!response.ok) {
     const error = await response.json().catch(() => ({ detail: "Analysis failed." }));
-    throw new Error(error.detail || "Analysis failed.");
+    const detail = error.detail;
+    if (typeof detail === "string") {
+      throw new Error(detail);
+    }
+    if (detail && typeof detail === "object") {
+      const message =
+        typeof detail.message === "string" ? detail.message : "Analysis failed.";
+      const requestId =
+        typeof detail.request_id === "string" ? ` Request ID: ${detail.request_id}` : "";
+      throw new Error(`${message}${requestId}`);
+    }
+    throw new Error("Analysis failed.");
+  }
+  return response.json();
+}
+
+export async function getTickerDetails(ticker: string): Promise<TickerMetadata> {
+  const response = await fetch(`${API_BASE}/api/tickers/${encodeURIComponent(ticker)}`);
+  if (!response.ok) {
+    throw new Error("Unable to load ticker details.");
   }
   return response.json();
 }
@@ -30,4 +49,3 @@ export async function analyzePortfolio(payload: unknown): Promise<AnalysisRespon
 export function resolveArtifactUrl(url: string): string {
   return `${API_BASE}${url}`;
 }
-

@@ -1,0 +1,101 @@
+run_id,portfolio_id,portfolio_name,question_id,question_category,status_code,overall_score,issues,warnings_count
+cache_all_weatherish__q001,cache_all_weatherish,Cache All-Weather-ish,q001,general_health,200,4.66,warnings_present,1
+cache_balanced__q002,cache_balanced,Cache Balanced,q002,general_health,200,4.66,warnings_present,1
+cache_barbell__q003,cache_barbell,Cache Barbell,q003,general_health,200,4.66,warnings_present,1
+cache_big_tech_plus__q004,cache_big_tech_plus,Cache Big Tech Plus,q004,general_health,200,4.66,warnings_present,1
+cache_defensive_growth__q005,cache_defensive_growth,Cache Defensive Growth,q005,general_health,200,4.66,warnings_present,1
+cache_drawdown_test__q006,cache_drawdown_test,Cache Drawdown Test,q006,general_health,200,4.66,warnings_present,1
+cache_energy_finance__q007,cache_energy_finance,Cache Energy + Finance,q007,general_health,200,4.66,warnings_present,1
+cache_energy_hedge__q008,cache_energy_hedge,Cache Energy Hedge,q008,general_health,200,4.66,warnings_present,1
+cache_five_name__q009,cache_five_name,Cache Five Name,q009,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_growth_barbell__q010,cache_growth_barbell,Cache Growth Barbell,q010,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_health_focus__q011,cache_health_focus,Cache Healthcare Focus,q011,concentration_diversification,200,4.76,warnings_present,1
+cache_health_quality__q012,cache_health_quality,Cache Health Quality,q012,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_high_beta__q013,cache_high_beta,Cache High Beta,q013,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_macro_mix__q014,cache_macro_mix,Cache Macro Mix,q014,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_momentum__q015,cache_momentum,Cache Momentum,q015,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_platforms__q016,cache_platforms,Cache Platforms,q016,concentration_diversification,200,4.76,warnings_present,1
+cache_quality__q017,cache_quality,Cache Quality Blend,q017,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_rates_sensitive__q018,cache_rates_sensitive,Cache Rates Sensitive,q018,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_tech_core__q019,cache_tech_core,Cache Tech Core,q019,performance_drivers,200,4.66,warnings_present,1
+cache_ten_name__q020,cache_ten_name,Cache Ten Name,q020,performance_drivers,200,4.66,warnings_present,1
+cache_all_weatherish__q021,cache_all_weatherish,Cache All-Weather-ish,q021,performance_drivers,200,4.66,warnings_present,1
+cache_balanced__q022,cache_balanced,Cache Balanced,q022,performance_drivers,200,4.66,warnings_present,1
+cache_barbell__q023,cache_barbell,Cache Barbell,q023,performance_drivers,200,4.66,warnings_present,1
+cache_big_tech_plus__q024,cache_big_tech_plus,Cache Big Tech Plus,q024,performance_drivers,200,4.66,warnings_present,1
+cache_defensive_growth__q025,cache_defensive_growth,Cache Defensive Growth,q025,performance_drivers,200,4.66,warnings_present,1
+cache_drawdown_test__q026,cache_drawdown_test,Cache Drawdown Test,q026,performance_drivers,200,4.66,warnings_present,1
+cache_energy_finance__q027,cache_energy_finance,Cache Energy + Finance,q027,rates_macro,200,4.71,warnings_present,1
+cache_energy_hedge__q028,cache_energy_hedge,Cache Energy Hedge,q028,rates_macro,200,4.71,warnings_present,1
+cache_five_name__q029,cache_five_name,Cache Five Name,q029,rates_macro,200,4.71,warnings_present,1
+cache_growth_barbell__q030,cache_growth_barbell,Cache Growth Barbell,q030,rates_macro,200,4.71,warnings_present,1
+cache_health_focus__q031,cache_health_focus,Cache Healthcare Focus,q031,rates_macro,200,4.71,warnings_present,1
+cache_health_quality__q032,cache_health_quality,Cache Health Quality,q032,rates_macro,200,4.71,warnings_present,1
+cache_high_beta__q033,cache_high_beta,Cache High Beta,q033,rates_macro,200,4.71,warnings_present,1
+cache_macro_mix__q034,cache_macro_mix,Cache Macro Mix,q034,rates_macro,200,4.71,warnings_present,1
+cache_momentum__q035,cache_momentum,Cache Momentum,q035,geopolitical_war,200,4.71,warnings_present,1
+cache_platforms__q036,cache_platforms,Cache Platforms,q036,geopolitical_war,200,4.71,warnings_present,1
+cache_quality__q037,cache_quality,Cache Quality Blend,q037,geopolitical_war,200,4.71,warnings_present,1
+cache_rates_sensitive__q038,cache_rates_sensitive,Cache Rates Sensitive,q038,geopolitical_war,200,4.71,warnings_present,1
+cache_tech_core__q039,cache_tech_core,Cache Tech Core,q039,geopolitical_war,200,4.71,warnings_present,1
+cache_ten_name__q040,cache_ten_name,Cache Ten Name,q040,geopolitical_war,200,4.71,warnings_present,1
+cache_all_weatherish__q041,cache_all_weatherish,Cache All-Weather-ish,q041,geopolitical_war,200,4.71,warnings_present,1
+cache_balanced__q042,cache_balanced,Cache Balanced,q042,geopolitical_war,200,4.71,warnings_present,1
+cache_barbell__q043,cache_barbell,Cache Barbell,q043,what_if_addition,200,4.76,warnings_present,1
+cache_big_tech_plus__q044,cache_big_tech_plus,Cache Big Tech Plus,q044,what_if_addition,200,4.76,warnings_present,1
+cache_defensive_growth__q045,cache_defensive_growth,Cache Defensive Growth,q045,what_if_addition,200,4.76,warnings_present,1
+cache_drawdown_test__q046,cache_drawdown_test,Cache Drawdown Test,q046,what_if_addition,200,4.76,warnings_present,1
+cache_energy_finance__q047,cache_energy_finance,Cache Energy + Finance,q047,what_if_addition,200,4.76,warnings_present,1
+cache_energy_hedge__q048,cache_energy_hedge,Cache Energy Hedge,q048,what_if_addition,200,4.76,warnings_present,1
+cache_five_name__q049,cache_five_name,Cache Five Name,q049,what_if_addition,200,4.76,warnings_present,1
+cache_growth_barbell__q050,cache_growth_barbell,Cache Growth Barbell,q050,what_if_addition,200,4.76,warnings_present,1
+cache_health_focus__q051,cache_health_focus,Cache Healthcare Focus,q051,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_health_quality__q052,cache_health_quality,Cache Health Quality,q052,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_high_beta__q053,cache_high_beta,Cache High Beta,q053,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_macro_mix__q054,cache_macro_mix,Cache Macro Mix,q054,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_momentum__q055,cache_momentum,Cache Momentum,q055,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_platforms__q056,cache_platforms,Cache Platforms,q056,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_quality__q057,cache_quality,Cache Quality Blend,q057,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_rates_sensitive__q058,cache_rates_sensitive,Cache Rates Sensitive,q058,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_tech_core__q059,cache_tech_core,Cache Tech Core,q059,sector_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_ten_name__q060,cache_ten_name,Cache Ten Name,q060,sector_diversification,200,4.76,warnings_present,1
+cache_all_weatherish__q061,cache_all_weatherish,Cache All-Weather-ish,q061,sector_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_balanced__q062,cache_balanced,Cache Balanced,q062,sector_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_barbell__q063,cache_barbell,Cache Barbell,q063,sector_diversification,200,4.76,warnings_present,1
+cache_big_tech_plus__q064,cache_big_tech_plus,Cache Big Tech Plus,q064,sector_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_defensive_growth__q065,cache_defensive_growth,Cache Defensive Growth,q065,benchmark_underperformance,200,4.66,warnings_present,1
+cache_drawdown_test__q066,cache_drawdown_test,Cache Drawdown Test,q066,benchmark_underperformance,200,4.66,warnings_present,1
+cache_energy_finance__q067,cache_energy_finance,Cache Energy + Finance,q067,benchmark_underperformance,200,4.66,warnings_present,1
+cache_energy_hedge__q068,cache_energy_hedge,Cache Energy Hedge,q068,benchmark_underperformance,200,4.66,warnings_present,1
+cache_five_name__q069,cache_five_name,Cache Five Name,q069,drawdown_risk,200,4.66,warnings_present,1
+cache_growth_barbell__q070,cache_growth_barbell,Cache Growth Barbell,q070,drawdown_risk,200,4.14,planner_mismatch;warnings_present,1
+cache_health_focus__q071,cache_health_focus,Cache Healthcare Focus,q071,drawdown_risk,200,4.66,warnings_present,1
+cache_health_quality__q072,cache_health_quality,Cache Health Quality,q072,drawdown_risk,200,4.66,warnings_present,1
+cache_high_beta__q073,cache_high_beta,Cache High Beta,q073,macro_sensitivity,200,4.71,warnings_present,1
+cache_macro_mix__q074,cache_macro_mix,Cache Macro Mix,q074,macro_sensitivity,200,4.71,warnings_present,1
+cache_momentum__q075,cache_momentum,Cache Momentum,q075,macro_sensitivity,200,4.71,warnings_present,1
+cache_platforms__q076,cache_platforms,Cache Platforms,q076,macro_sensitivity,200,4.71,warnings_present,1
+cache_quality__q077,cache_quality,Cache Quality Blend,q077,messy_natural_language,200,4.76,warnings_present,1
+cache_rates_sensitive__q078,cache_rates_sensitive,Cache Rates Sensitive,q078,messy_natural_language,200,4.66,warnings_present,1
+cache_tech_core__q079,cache_tech_core,Cache Tech Core,q079,messy_natural_language,200,4.66,warnings_present,1
+cache_ten_name__q080,cache_ten_name,Cache Ten Name,q080,messy_natural_language,200,4.66,warnings_present,1
+cache_all_weatherish__q081,cache_all_weatherish,Cache All-Weather-ish,q081,messy_natural_language,200,4.76,warnings_present,1
+cache_balanced__q082,cache_balanced,Cache Balanced,q082,messy_natural_language,200,4.66,warnings_present,1
+cache_barbell__q083,cache_barbell,Cache Barbell,q083,messy_natural_language,200,4.66,warnings_present,1
+cache_big_tech_plus__q084,cache_big_tech_plus,Cache Big Tech Plus,q084,messy_natural_language,200,4.66,warnings_present,1
+cache_defensive_growth__q085,cache_defensive_growth,Cache Defensive Growth,q085,windowed,500,0.0,technical_failure,0
+cache_drawdown_test__q086,cache_drawdown_test,Cache Drawdown Test,q086,windowed,500,0.0,technical_failure,0
+cache_energy_finance__q087,cache_energy_finance,Cache Energy + Finance,q087,windowed,500,0.0,technical_failure,0
+cache_energy_hedge__q088,cache_energy_hedge,Cache Energy Hedge,q088,windowed,200,4.66,warnings_present,1
+cache_five_name__q089,cache_five_name,Cache Five Name,q089,windowed,500,0.0,technical_failure,0
+cache_growth_barbell__q090,cache_growth_barbell,Cache Growth Barbell,q090,filings_overlay,200,4.66,warnings_present,1
+cache_health_focus__q091,cache_health_focus,Cache Healthcare Focus,q091,earnings_overlay,200,4.14,planner_mismatch;warnings_present,1
+cache_health_quality__q092,cache_health_quality,Cache Health Quality,q092,earnings_overlay,200,4.14,planner_mismatch;warnings_present,1
+cache_high_beta__q093,cache_high_beta,Cache High Beta,q093,filings_overlay,200,4.66,warnings_present,1
+cache_macro_mix__q094,cache_macro_mix,Cache Macro Mix,q094,what_if_addition,200,4.76,warnings_present,1
+cache_momentum__q095,cache_momentum,Cache Momentum,q095,drawdown_risk,200,4.14,planner_mismatch;warnings_present,1
+cache_platforms__q096,cache_platforms,Cache Platforms,q096,sector_diversification,200,4.66,missing_candidate_search;warnings_present,1
+cache_quality__q097,cache_quality,Cache Quality Blend,q097,risk_adjusted_returns,200,4.76,warnings_present,1
+cache_rates_sensitive__q098,cache_rates_sensitive,Cache Rates Sensitive,q098,messy_natural_language,200,4.66,warnings_present,1
+cache_tech_core__q099,cache_tech_core,Cache Tech Core,q099,benchmark_underperformance,200,4.66,warnings_present,1
+cache_ten_name__q100,cache_ten_name,Cache Ten Name,q100,concentration_diversification,200,4.66,missing_candidate_search;warnings_present,1

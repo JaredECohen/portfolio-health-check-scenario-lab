@@ -75,6 +75,48 @@ export interface EDAFinding {
   severity: string;
 }
 
+export interface DataSourceReference {
+  source: string;
+  series: string;
+  category: string;
+  description: string;
+  access: string;
+  requires_api_key: boolean;
+  status: string;
+  url?: string | null;
+  rationale?: string | null;
+}
+
+export interface NewsArticle {
+  source: string;
+  source_type: string;
+  title: string;
+  url: string;
+  published_at?: string | null;
+  domain?: string | null;
+  summary?: string | null;
+  sentiment?: number | null;
+  relevance?: number | null;
+  tickers: string[];
+  topics: string[];
+}
+
+export interface NewsSourceStats {
+  source: string;
+  article_count: number;
+  avg_sentiment?: number | null;
+  latest_published_at?: string | null;
+}
+
+export interface NewsIntelResult {
+  query: string;
+  retrieval_sources: string[];
+  articles: NewsArticle[];
+  source_stats: NewsSourceStats[];
+  dominant_topics: string[];
+  caveats: string[];
+}
+
 export interface ScenarioDelta {
   metric: string;
   before: number | null;
@@ -113,6 +155,25 @@ export interface CandidateSearchResult {
   candidates: CandidateRank[];
 }
 
+export interface EntityFrequency {
+  entity: string;
+  count: number;
+}
+
+export interface TopicCluster {
+  topic: string;
+  mentions: number;
+  keywords: string[];
+  representative_text?: string | null;
+}
+
+export interface NLPTextSummary {
+  sentiment_counts: Record<string, number>;
+  keywords: string[];
+  entities: EntityFrequency[];
+  topic_clusters: TopicCluster[];
+}
+
 export interface OverlayBundle {
   macro?: {
     question_focus: string;
@@ -127,8 +188,10 @@ export interface OverlayBundle {
       ticker: string;
       company_name: string;
       quarter?: string | null;
+      event_date?: string | null;
       tone: string;
       findings: string[];
+      nlp_summary?: NLPTextSummary | null;
       transcript_available: boolean;
     }>;
   } | null;
@@ -139,6 +202,7 @@ export interface OverlayBundle {
       form_type?: string | null;
       filed_at?: string | null;
       findings: string[];
+      nlp_summary?: NLPTextSummary | null;
       filing_available: boolean;
     }>;
   } | null;
@@ -152,18 +216,39 @@ export interface ArtifactRecord {
   url: string;
 }
 
+export interface AnalysisWarning {
+  code: string;
+  source: string;
+  severity: string;
+  message: string;
+}
+
 export interface AnalysisResponse {
   session_id: string;
   normalized_portfolio: {
-    holdings: PositionSnapshot[];
+    holdings: Array<{
+      ticker: string;
+      shares: number;
+      cost_basis?: number | null;
+      company_name?: string | null;
+      sector?: string | null;
+      cik?: string | null;
+      exchange?: string | null;
+      asset_type: "Equity";
+    }>;
     question: string;
     benchmark: string;
     lookback_days: number;
+    start_date?: string | null;
+    end_date?: string | null;
   };
   baseline: {
     total_portfolio_value: number;
     benchmark_symbol: string;
     risk_free_rate_used: number;
+    effective_start_date: string;
+    effective_end_date: string;
+    effective_observations: number;
     metrics: MetricCard[];
     positions: PositionSnapshot[];
     sector_exposures: SectorExposure[];
@@ -178,6 +263,8 @@ export interface AnalysisResponse {
     objective: string;
     explanation: string;
     dynamic_workflow: string;
+    macro_themes?: string[];
+    preferred_data_sources?: string[];
     investigation_steps: string[];
   };
   dynamic_eda: {
@@ -185,6 +272,8 @@ export interface AnalysisResponse {
     question_type: string;
     findings: EDAFinding[];
     tables: AnalysisTable[];
+    data_sources?: DataSourceReference[];
+    news_intel?: NewsIntelResult | null;
     scenario_analysis?: ScenarioAnalytics | null;
     candidate_search?: CandidateSearchResult | null;
   };
@@ -202,6 +291,6 @@ export interface AnalysisResponse {
     flagged_claims: string[];
     revised_memo: AnalysisResponse["final_memo"];
   };
+  warnings: AnalysisWarning[];
   artifacts: ArtifactRecord[];
 }
-

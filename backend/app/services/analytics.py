@@ -30,6 +30,8 @@ DEFAULT_METRIC_ORDER = [
     ("sharpe_ratio", "Sharpe Ratio"),
 ]
 
+MIN_EFFECTIVE_OBSERVATIONS = 40
+
 
 @dataclass
 class AnalyticsBundle:
@@ -63,8 +65,16 @@ class AnalyticsService:
             },
             axis=1,
         ).dropna(how="any")
+        if adjusted_close.empty:
+            raise ValueError("No aligned price history is available for the selected holdings.")
         benchmark_prices = benchmark_history["adjusted_close"].reindex(adjusted_close.index).dropna()
         adjusted_close = adjusted_close.loc[benchmark_prices.index]
+        if adjusted_close.empty:
+            raise ValueError("No aligned benchmark history is available for the selected holdings.")
+        if len(adjusted_close) < MIN_EFFECTIVE_OBSERVATIONS:
+            raise ValueError(
+                f"At least {MIN_EFFECTIVE_OBSERVATIONS} aligned observations are required; only {len(adjusted_close)} are available."
+            )
 
         current_prices = adjusted_close.iloc[-1].to_dict()
         market_values = {
@@ -216,6 +226,9 @@ class AnalyticsService:
             total_cost_basis=total_cost_basis,
             benchmark_symbol=benchmark_symbol,
             risk_free_rate_used=risk_free_rate,
+            effective_start_date=adjusted_close.index.min().strftime("%Y-%m-%d"),
+            effective_end_date=adjusted_close.index.max().strftime("%Y-%m-%d"),
+            effective_observations=int(len(adjusted_close)),
             metrics=metrics,
             positions=positions,
             sector_exposures=sector_exposures,

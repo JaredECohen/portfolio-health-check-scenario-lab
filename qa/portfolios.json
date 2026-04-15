@@ -1,0 +1,1232 @@
+[
+  {
+    "id": "cache_tech_core",
+    "name": "Cache Tech Core",
+    "description": "Cache-backed tech core",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 40,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 35,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 30,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_growth_barbell",
+    "name": "Cache Growth Barbell",
+    "description": "Growth + platform concentration",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 26,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "PLTR",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_quality",
+    "name": "Cache Quality Blend",
+    "description": "Quality large-cap mix",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 22,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_macro_mix",
+    "name": "Cache Macro Mix",
+    "description": "Rates and oil sensitivity",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "JPM",
+        "shares": 26,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_health_focus",
+    "name": "Cache Healthcare Focus",
+    "description": "Healthcare heavy portfolio",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "LLY",
+        "shares": 34,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 30,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_energy_finance",
+    "name": "Cache Energy + Finance",
+    "description": "Value and macro-sensitive",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "JPM",
+        "shares": 32,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 30,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_high_beta",
+    "name": "Cache High Beta",
+    "description": "High beta cached mix",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "PLTR",
+        "shares": 28,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_balanced",
+    "name": "Cache Balanced",
+    "description": "Balanced cached large-cap",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_five_name",
+    "name": "Cache Five Name",
+    "description": "Concentrated five-name mix",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 22,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_ten_name",
+    "name": "Cache Ten Name",
+    "description": "Ten-name cached diversified",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "PLTR",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_platforms",
+    "name": "Cache Platforms",
+    "description": "Platform-heavy growth",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "GOOGL",
+        "shares": 28,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "PLTR",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_defensive_growth",
+    "name": "Cache Defensive Growth",
+    "description": "Quality growth with healthcare ballast",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "MSFT",
+        "shares": 22,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 10,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_energy_hedge",
+    "name": "Cache Energy Hedge",
+    "description": "Oil hedge portfolio",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "XOM",
+        "shares": 36,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_rates_sensitive",
+    "name": "Cache Rates Sensitive",
+    "description": "Tech plus financials",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_health_quality",
+    "name": "Cache Health Quality",
+    "description": "Health and quality compounders",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "LLY",
+        "shares": 28,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 26,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_momentum",
+    "name": "Cache Momentum",
+    "description": "Momentum-biased cached names",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "PLTR",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      }
+    ]
+  },
+  {
+    "id": "cache_drawdown_test",
+    "name": "Cache Drawdown Test",
+    "description": "Drawdown-stress test mix",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "PLTR",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "AAPL",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_big_tech_plus",
+    "name": "Cache Big Tech Plus",
+    "description": "Mega-cap tech with macro ballast",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 24,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "AMZN",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "AMAZON COM INC",
+        "sector": "Unknown",
+        "cik": "0001018724",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_barbell",
+    "name": "Cache Barbell",
+    "description": "Growth and defense barbell",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "PLTR",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "Palantir Technologies Inc.",
+        "sector": "Unknown",
+        "cik": "0001321655",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "DUOL",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "Duolingo, Inc.",
+        "sector": "Unknown",
+        "cik": "0001562088",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 20,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 18,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      }
+    ]
+  },
+  {
+    "id": "cache_all_weatherish",
+    "name": "Cache All-Weather-ish",
+    "description": "Cached blend across growth, defense, finance, and energy",
+    "question_bias": [
+      "general_health",
+      "concentration_diversification",
+      "performance_drivers"
+    ],
+    "holdings": [
+      {
+        "ticker": "AAPL",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "Apple Inc.",
+        "sector": "Unknown",
+        "cik": "0000320193",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "MSFT",
+        "shares": 16,
+        "cost_basis": null,
+        "company_name": "MICROSOFT CORP",
+        "sector": "Unknown",
+        "cik": "0000789019",
+        "exchange": "Nasdaq"
+      },
+      {
+        "ticker": "JPM",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "JPMORGAN CHASE & CO",
+        "sector": "Unknown",
+        "cik": "0000019617",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "XOM",
+        "shares": 12,
+        "cost_basis": null,
+        "company_name": "EXXON MOBIL CORP",
+        "sector": "Unknown",
+        "cik": "0000034088",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "LLY",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "ELI LILLY & Co",
+        "sector": "Unknown",
+        "cik": "0000059478",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "UNH",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "UNITEDHEALTH GROUP INC",
+        "sector": "Unknown",
+        "cik": "0000731766",
+        "exchange": "NYSE"
+      },
+      {
+        "ticker": "GOOGL",
+        "shares": 14,
+        "cost_basis": null,
+        "company_name": "Alphabet Inc.",
+        "sector": "Unknown",
+        "cik": "0001652044",
+        "exchange": "Nasdaq"
+      }
+    ]
+  }
+]

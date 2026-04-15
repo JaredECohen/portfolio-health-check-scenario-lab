@@ -1,0 +1,929 @@
+[
+  {
+    "id": "q001",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "Give me a full health check on this portfolio.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q002",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "Is this portfolio healthy or carrying hidden risk?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q003",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "What are the biggest strengths and weaknesses in this portfolio right now?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q004",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "Assess the overall health of my portfolio and tell me what stands out.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q005",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "If you were reviewing this as an investment committee, what would worry you first?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q006",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "Give me the first-pass diagnosis on this portfolio.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q007",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "Where is this portfolio most fragile?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q008",
+    "category": "general_health",
+    "expected_question_type": "general_health",
+    "text": "What risks am I underestimating in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q009",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Am I too concentrated?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q010",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Where is diversification weakest here?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q011",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "What should I add to diversify this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q012",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "How clustered is this portfolio by sector and correlation?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q013",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "What is the biggest diversification gap in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q014",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Which holdings are making this portfolio feel less diversified than it looks?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q015",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "If I wanted a more balanced portfolio, where should I start?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q016",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "What single addition would most reduce concentration risk?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q017",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Do sector exposures make this portfolio less diversified than the holding count implies?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q018",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "I have a feeling these names all move together. Is that true?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q019",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "What is driving my performance?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q020",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "Why did I underperform SPY?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q021",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "Which names are doing the heavy lifting here?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q022",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "Break down what actually drove gains and losses in this portfolio.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q023",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "If I explain this portfolio's performance to a PM, what are the main drivers?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q024",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "What are my biggest detractors and why do they matter so much?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q025",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "Was this portfolio's performance broad-based or carried by a few names?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q026",
+    "category": "performance_drivers",
+    "expected_question_type": "performance_drivers",
+    "text": "Why did this portfolio trail the benchmark over this period?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q027",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "How will a move in rates affect my portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q028",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "How rate-sensitive is this portfolio really?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q029",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "If the 10Y jumps again, what happens to this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q030",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "Which names make this portfolio vulnerable to higher yields?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q031",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "Is this portfolio better positioned for falling rates or rising rates?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q032",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "Show me how this portfolio behaves during rate shocks.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q033",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "Does this portfolio have hidden duration risk?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q034",
+    "category": "rates_macro",
+    "expected_question_type": "rates_macro",
+    "text": "How much of my risk here is really a macro rates trade?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q035",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "How would an escalation in war affect my portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q036",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "If geopolitical tensions spike, what breaks first in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q037",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "How exposed is this portfolio to an oil shock or defense-led risk-off move?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q038",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "Would this portfolio likely hold up or get hit in a geopolitical shock?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q039",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "Stress test this portfolio for a Middle East escalation.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q040",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "Where are my war-scenario vulnerabilities?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q041",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "Which holdings would probably help versus hurt if a conflict escalates?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q042",
+    "category": "geopolitical_war",
+    "expected_question_type": "geopolitical_war",
+    "text": "How much geopolitical shock sensitivity is embedded in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q043",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "What happens if I add MSFT?",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q044",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "What happens if I add JPM?",
+    "hypothetical_position": {
+      "ticker": "JPM",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q045",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "What happens if I add XOM?",
+    "hypothetical_position": {
+      "ticker": "XOM",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q046",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "If I add LLY at a 5% target weight, what changes?",
+    "hypothetical_position": {
+      "ticker": "LLY",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q047",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "Model a 5% addition to RTX for me.",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q048",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "What would adding NEE do to the risk profile?",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q049",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "How would a small PLD position change this portfolio?",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.04
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q050",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "Run a what-if if I added KO.",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q051",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "What should I add to improve risk-adjusted returns?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q052",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "What stock could improve Sharpe without killing returns?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q053",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "How can I lower beta while preserving return potential?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q054",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "What should I add if I want better return per unit of risk?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q055",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "Find me an addition that improves Sharpe and reduces beta.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q056",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "What single stock best improves this portfolio's risk-adjusted profile?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q057",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "I want less risk but I do not want to give up returns. What should I add?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q058",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "Screen for something less correlated that still helps returns.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q059",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "What sector am I underexposed to?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q060",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Which sector addition would improve diversification most?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q061",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Are my sector bets too lopsided?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q062",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Where are the biggest sector holes in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q063",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "Should I diversify by adding a different sector, and if so which one?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q064",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "How much of my risk is really just sector concentration?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q065",
+    "category": "benchmark_underperformance",
+    "expected_question_type": "performance_drivers",
+    "text": "Why am I lagging SPY?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q066",
+    "category": "benchmark_underperformance",
+    "expected_question_type": "performance_drivers",
+    "text": "Explain the underperformance versus SPY in plain English.",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q067",
+    "category": "benchmark_underperformance",
+    "expected_question_type": "performance_drivers",
+    "text": "What made this portfolio trail the benchmark?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q068",
+    "category": "benchmark_underperformance",
+    "expected_question_type": "performance_drivers",
+    "text": "Is underperformance here coming from stock picking or portfolio construction?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q069",
+    "category": "drawdown_risk",
+    "expected_question_type": "general_health",
+    "text": "Where would the drawdown likely come from in a selloff?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q070",
+    "category": "drawdown_risk",
+    "expected_question_type": "general_health",
+    "text": "How ugly has drawdown been and what is driving it?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q071",
+    "category": "drawdown_risk",
+    "expected_question_type": "general_health",
+    "text": "What is the main drawdown risk in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q072",
+    "category": "drawdown_risk",
+    "expected_question_type": "general_health",
+    "text": "If markets roll over, which names are likely to amplify downside?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q073",
+    "category": "macro_sensitivity",
+    "expected_question_type": "rates_macro",
+    "text": "What macro variables matter most for this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q074",
+    "category": "macro_sensitivity",
+    "expected_question_type": "rates_macro",
+    "text": "Is this portfolio more exposed to rates, oil, or growth scares?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q075",
+    "category": "macro_sensitivity",
+    "expected_question_type": "rates_macro",
+    "text": "Which macro factor seems to explain this portfolio best?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q076",
+    "category": "macro_sensitivity",
+    "expected_question_type": "rates_macro",
+    "text": "What macro overlay would you put on this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q077",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "ok so like what is actually going on here and what would you add maybe?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q078",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "this feels kinda risky but i cant tell if its fake diversified or actually diversified",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q079",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "if yields rip and oil rips too am i cooked here?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q080",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "what's the real story, not the generic dashboard answer",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q081",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "what stock would make this less dumb",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q082",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "why does this portfolio feel worse than spy lately",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q083",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "give me the so what on this mix",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q084",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "where is the hidden concentration if i squint at this",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q085",
+    "category": "windowed",
+    "expected_question_type": null,
+    "text": "What drove performance during 2024 only?",
+    "hypothetical_position": null,
+    "start_date": "2024-01-01",
+    "end_date": "2024-12-31"
+  },
+  {
+    "id": "q086",
+    "category": "windowed",
+    "expected_question_type": null,
+    "text": "How rate-sensitive was this portfolio in the first half of 2024?",
+    "hypothetical_position": null,
+    "start_date": "2024-01-01",
+    "end_date": "2024-06-30"
+  },
+  {
+    "id": "q087",
+    "category": "windowed",
+    "expected_question_type": null,
+    "text": "What should I add to diversify based only on 2023 data?",
+    "hypothetical_position": null,
+    "start_date": "2023-01-01",
+    "end_date": "2023-12-31"
+  },
+  {
+    "id": "q088",
+    "category": "windowed",
+    "expected_question_type": null,
+    "text": "How did this portfolio behave after July 2024?",
+    "hypothetical_position": null,
+    "start_date": "2024-07-01",
+    "end_date": null
+  },
+  {
+    "id": "q089",
+    "category": "windowed",
+    "expected_question_type": null,
+    "text": "What was the key risk before 2024 ended?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": "2024-12-31"
+  },
+  {
+    "id": "q090",
+    "category": "filings_overlay",
+    "expected_question_type": "general_health",
+    "text": "Which filing-based risks matter most in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q091",
+    "category": "earnings_overlay",
+    "expected_question_type": "performance_drivers",
+    "text": "Are earnings call signals getting more cautious in my biggest positions?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q092",
+    "category": "earnings_overlay",
+    "expected_question_type": "performance_drivers",
+    "text": "What do recent transcripts say about demand and margins for my main names?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q093",
+    "category": "filings_overlay",
+    "expected_question_type": "general_health",
+    "text": "Are there liquidity or debt themes in recent filings that I should care about?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q094",
+    "category": "what_if_addition",
+    "expected_question_type": "what_if_addition",
+    "text": "What if I added AVGO at 5%?",
+    "hypothetical_position": {
+      "ticker": "MSFT",
+      "target_weight": 0.05
+    },
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q095",
+    "category": "drawdown_risk",
+    "expected_question_type": "general_health",
+    "text": "How concentrated is downside risk in the top three holdings?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q096",
+    "category": "sector_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "If I want to reduce sector crowding, where should I look?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q097",
+    "category": "risk_adjusted_returns",
+    "expected_question_type": "concentration_diversification",
+    "text": "Which candidate lowers volatility and beta but does not hurt return in the lookback?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q098",
+    "category": "messy_natural_language",
+    "expected_question_type": null,
+    "text": "if i had to own this tomorrow and couldnt hedge it what would freak me out most",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q099",
+    "category": "benchmark_underperformance",
+    "expected_question_type": "performance_drivers",
+    "text": "Did I lose to SPY because of concentration, beta, or stock picks?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  },
+  {
+    "id": "q100",
+    "category": "concentration_diversification",
+    "expected_question_type": "concentration_diversification",
+    "text": "What is the most correlated cluster in this portfolio?",
+    "hypothetical_position": null,
+    "start_date": null,
+    "end_date": null
+  }
+]

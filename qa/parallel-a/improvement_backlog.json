@@ -1,0 +1,23 @@
+[
+  {
+    "issue": "missing_candidate_search",
+    "count": 14,
+    "priority": 1,
+    "title": "Harden candidate-search activation",
+    "reason": "Users asking what to add should consistently get screened candidates."
+  },
+  {
+    "issue": "planner_mismatch",
+    "count": 5,
+    "priority": 1,
+    "title": "Tighten planner routing",
+    "reason": "Planner misclassifications reduce trust and lead to irrelevant workflows."
+  },
+  {
+    "issue": "warnings_present",
+    "count": 97,
+    "priority": 3,
+    "title": "Classify and reduce degraded-mode runs",
+    "reason": "Frequent warnings indicate reliability or coverage gaps."
+  }
+]

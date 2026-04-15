@@ -1,10 +1,10 @@
-import { useDeferredValue, useEffect, useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import { searchTickers } from "../lib/api";
 import type { TickerMetadata } from "../types";
 
 interface SearchableTickerInputProps {
   value: string;
-  onSelect: (ticker: TickerMetadata) => void;
+  onSelect: (ticker: TickerMetadata) => void | Promise<void>;
   placeholder?: string;
 }
 
@@ -13,9 +13,11 @@ export function SearchableTickerInput({
   onSelect,
   placeholder = "Search ticker or company",
 }: SearchableTickerInputProps) {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const [query, setQuery] = useState(value);
   const [results, setResults] = useState<TickerMetadata[]>([]);
   const [open, setOpen] = useState(false);
+  const [openUpward, setOpenUpward] = useState(false);
   const deferredQuery = useDeferredValue(query);
 
   useEffect(() => {
@@ -45,8 +47,23 @@ export function SearchableTickerInput({
     };
   }, [deferredQuery]);
 
+  useEffect(() => {
+    if (!open || results.length === 0 || !containerRef.current) {
+      setOpenUpward(false);
+      return;
+    }
+    const rect = containerRef.current.getBoundingClientRect();
+    const estimatedMenuHeight = Math.min(results.length, 6) * 56 + 12;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const spaceAbove = rect.top;
+    setOpenUpward(spaceBelow < estimatedMenuHeight && spaceAbove > spaceBelow);
+  }, [open, results]);
+
   return (
-    <div className="ticker-search">
+    <div
+      className={`ticker-search ${open && results.length > 0 ? "ticker-search--open" : ""}`}
+      ref={containerRef}
+    >
       <input
         value={query}
         placeholder={placeholder}
@@ -60,7 +77,7 @@ export function SearchableTickerInput({
         }}
       />
       {open && results.length > 0 ? (
-        <div className="ticker-search__menu">
+        <div className={`ticker-search__menu ${openUpward ? "ticker-search__menu--up" : ""}`}>
           {results.map((item) => (
             <button
               type="button"
@@ -81,4 +98,3 @@ export function SearchableTickerInput({
     </div>
   );
 }
-
