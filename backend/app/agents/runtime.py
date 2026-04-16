@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import logging
+
 import httpx
 from agents import Agent, AgentOutputSchema, Runner
 from openai import APIConnectionError
@@ -40,9 +42,10 @@ from app.tools.agent_tools import (
 )
 
 
-class AgentRuntime:
-    _api_unavailable = False
+logger = logging.getLogger(__name__)
 
+
+class AgentRuntime:
     def __init__(self) -> None:
         plan_output = AgentOutputSchema(AnalysisPlan, strict_json_schema=False)
         dynamic_eda_output = AgentOutputSchema(DynamicEDAResult, strict_json_schema=False)
@@ -127,8 +130,6 @@ class AgentRuntime:
         )
 
     async def _run_agent(self, agent: Agent, prompt: str, *, context: object | None = None):
-        if self.__class__._api_unavailable:
-            raise RuntimeError("OpenAI agent runtime is unavailable in this process.")
         try:
             if context is None:
                 result = await Runner.run(agent, prompt)
@@ -136,7 +137,7 @@ class AgentRuntime:
                 result = await Runner.run(agent, prompt, context=context)
             return result.final_output
         except (APIConnectionError, httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
-            self.__class__._api_unavailable = True
+            logger.warning("Agent runtime request failed for %s: %s", agent.name, exc)
             raise RuntimeError("OpenAI agent runtime is unavailable in this process.") from exc
 
     async def run_planner(self, prompt: str) -> AnalysisPlan:
