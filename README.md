@@ -465,11 +465,16 @@ Backend:
 
 This repo includes a production-ready `render.yaml` Blueprint that provisions:
 
-- A Docker backend web service
-- A static frontend web service
-- A managed Render Postgres database
+- A Docker backend web service: `portfolio-health-check-backend-starter`
+- A static frontend web service: `portfolio-health-check-frontend`
+- A managed Render Postgres database: `portfolio-health-check-db`
 
 The backend uses `DATABASE_URL` from the managed Postgres instance in Render. Local SQLite fallback remains available automatically when `DATABASE_URL` is unset in development.
+
+The current live Render URLs are:
+
+- Frontend: `https://portfolio-health-check-frontend.onrender.com`
+- Backend: `https://portfolio-health-check-backend-starter.onrender.com`
 
 Required Render secrets:
 

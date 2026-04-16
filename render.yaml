@@ -1,6 +1,6 @@
 services:
   - type: web
-    name: portfolio-health-check-backend
+    name: portfolio-health-check-backend-starter
     runtime: docker
     plan: starter
     region: virginia
@@ -40,7 +40,7 @@ services:
     staticPublishPath: dist
     envVars:
       - key: VITE_API_BASE_URL
-        value: https://portfolio-health-check-backend.onrender.com
+        value: https://portfolio-health-check-backend-starter.onrender.com
 
 databases:
   - name: portfolio-health-check-db
