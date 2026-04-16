@@ -91,34 +91,23 @@ class AlphaVantageService:
         raise AlphaVantageError(f"Alpha Vantage request failed after retries: {last_error}")
 
     async def get_daily_adjusted(self, symbol: str, *, outputsize: str = "compact") -> pd.DataFrame:
+        normalized_outputsize = "compact" if outputsize == "full" else outputsize
         payload = await self._request(
             params={
                 "function": "TIME_SERIES_DAILY",
                 "symbol": symbol,
-                "outputsize": outputsize,
+                "outputsize": normalized_outputsize,
             },
         )
         frame = self._daily_frame_from_payload(payload)
         if frame is not None:
             return frame
-        info_message = str(payload.get("Information", "")).lower()
-        if outputsize == "full" and "outputsize=full" in info_message and "premium feature" in info_message:
-            payload = await self._request(
-                params={
-                    "function": "TIME_SERIES_DAILY",
-                    "symbol": symbol,
-                    "outputsize": "compact",
-                },
-            )
-            frame = self._daily_frame_from_payload(payload)
-            if frame is not None:
-                return frame
 
         payload = await self._request(
             params={
                 "function": "TIME_SERIES_DAILY_ADJUSTED",
                 "symbol": symbol,
-                "outputsize": outputsize,
+                "outputsize": normalized_outputsize,
             },
         )
         frame = self._daily_frame_from_payload(payload)

@@ -115,20 +115,19 @@ def test_daily_adjusted_history_falls_back_to_adjusted_endpoint() -> None:
     assert float(frame.iloc[-1]["close"]) == 170.10
 
 
-class FullHistoryPremiumAlphaVantage(StubAlphaVantage):
+class FullHistoryNormalizedAlphaVantage(StubAlphaVantage):
+    def __init__(self) -> None:
+        super().__init__()
+        self.daily_outputsizes: list[str] = []
+
     async def _request(self, *, params: dict[str, Any], ttl_seconds: int = 60 * 60 * 12) -> Any:  # noqa: ARG002
-        if params["function"] == "TIME_SERIES_DAILY" and params.get("outputsize") == "full":
-            return {
-                "Information": (
-                    "Thank you for using Alpha Vantage! The outputsize=full parameter value "
-                    "is a premium feature for the TIME_SERIES_DAILY endpoint."
-                )
-            }
+        if params["function"] == "TIME_SERIES_DAILY":
+            self.daily_outputsizes.append(params["outputsize"])
         return await super()._request(params=params, ttl_seconds=ttl_seconds)
 
 
-def test_daily_adjusted_history_falls_back_to_compact_when_full_is_premium() -> None:
-    service = FullHistoryPremiumAlphaVantage()
+def test_daily_adjusted_history_normalizes_full_to_compact() -> None:
+    service = FullHistoryNormalizedAlphaVantage()
 
     frame = asyncio.run(service.get_daily_adjusted("AAPL", outputsize="full"))
 
@@ -136,6 +135,7 @@ def test_daily_adjusted_history_falls_back_to_compact_when_full_is_premium() -> 
     assert frame.index.name == "date"
     assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
     assert float(frame.iloc[-1]["adjusted_close"]) == 170.10
+    assert service.daily_outputsizes == ["compact"]
 
 
 def test_economic_series_history_is_vectorized_and_filters_missing_values() -> None:
