@@ -34,6 +34,19 @@ class StubAlphaVantage(AlphaVantageService):
                     },
                 }
             }
+        if params["function"] == "TIME_SERIES_DAILY":
+            return {
+                "Time Series (Daily)": {
+                    "2024-05-03": {
+                        "4. close": "170.10",
+                        "5. volume": "1234567",
+                    },
+                    "2024-05-02": {
+                        "4. close": "168.00",
+                        "5. volume": "7654321",
+                    },
+                }
+            }
         if params["function"] == "TREASURY_YIELD":
             return {
                 "data": [
@@ -81,6 +94,30 @@ def test_daily_adjusted_history_is_vectorized_and_sorted() -> None:
     assert frame.index.name == "date"
     assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
     assert float(frame.iloc[-1]["adjusted_close"]) == 169.55
+
+
+class PremiumAdjustedAlphaVantage(StubAlphaVantage):
+    async def _request(self, *, params: dict[str, Any], ttl_seconds: int = 60 * 60 * 12) -> Any:  # noqa: ARG002
+        if params["function"] == "TIME_SERIES_DAILY_ADJUSTED":
+            return {
+                "Information": (
+                    "Thank you for using Alpha Vantage! This is a premium endpoint. "
+                    "You may subscribe to any of the premium plans to unlock all premium endpoints."
+                )
+            }
+        return await super()._request(params=params, ttl_seconds=ttl_seconds)
+
+
+def test_daily_adjusted_history_falls_back_to_free_daily_endpoint() -> None:
+    service = PremiumAdjustedAlphaVantage()
+
+    frame = asyncio.run(service.get_daily_adjusted("AAPL", outputsize="full"))
+
+    assert list(frame.columns) == ["adjusted_close", "close", "volume"]
+    assert frame.index.name == "date"
+    assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
+    assert float(frame.iloc[-1]["adjusted_close"]) == 170.10
+    assert float(frame.iloc[-1]["close"]) == 170.10
 
 
 def test_economic_series_history_is_vectorized_and_filters_missing_values() -> None:

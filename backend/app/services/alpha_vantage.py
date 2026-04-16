@@ -82,26 +82,25 @@ class AlphaVantageService:
                 "outputsize": outputsize,
             },
         )
-        time_series = payload.get("Time Series (Daily)", {})
-        if not time_series:
+        frame = self._daily_frame_from_payload(payload)
+        if frame is not None:
+            return frame
+
+        # Alpha Vantage has moved adjusted daily prices behind a premium plan.
+        info_message = str(payload.get("Information", ""))
+        if "premium endpoint" not in info_message.lower():
             raise AlphaVantageError(f"No daily price history returned for {symbol}.")
-        frame = (
-            pd.DataFrame.from_dict(time_series, orient="index")
-            .rename(
-                columns={
-                    "5. adjusted close": "adjusted_close",
-                    "4. close": "close",
-                    "6. volume": "volume",
-                }
-            )
-            .loc[:, ["adjusted_close", "close", "volume"]]
+
+        payload = await self._request(
+            params={
+                "function": "TIME_SERIES_DAILY",
+                "symbol": symbol,
+                "outputsize": outputsize,
+            },
         )
-        frame.index = pd.to_datetime(frame.index, format="%Y-%m-%d", errors="coerce")
-        frame = frame[frame.index.notna()]
-        if frame.empty:
-            raise AlphaVantageError(f"No parseable daily price history returned for {symbol}.")
-        frame = frame.astype(float).sort_index()
-        frame.index.name = "date"
+        frame = self._daily_frame_from_payload(payload)
+        if frame is None:
+            raise AlphaVantageError(f"No daily price history returned for {symbol}.")
         return frame
 
     async def get_company_overview(self, symbol: str) -> dict[str, Any]:
@@ -199,6 +198,33 @@ class AlphaVantageService:
         if frame.empty:
             return pd.DataFrame(columns=["value"], index=pd.DatetimeIndex([], name="date"))
         return frame.sort_values("date").set_index("date")
+
+    @staticmethod
+    def _daily_frame_from_payload(payload: dict[str, Any]) -> pd.DataFrame | None:
+        time_series = payload.get("Time Series (Daily)", {})
+        if not time_series:
+            return None
+        raw = pd.DataFrame.from_dict(time_series, orient="index")
+        if "4. close" not in raw.columns:
+            return None
+        volume_column = "6. volume" if "6. volume" in raw.columns else "5. volume"
+        if volume_column not in raw.columns:
+            return None
+
+        frame = pd.DataFrame(
+            {
+                "adjusted_close": raw.get("5. adjusted close", raw["4. close"]),
+                "close": raw["4. close"],
+                "volume": raw[volume_column],
+            }
+        )
+        frame.index = pd.to_datetime(frame.index, format="%Y-%m-%d", errors="coerce")
+        frame = frame[frame.index.notna()]
+        if frame.empty:
+            raise AlphaVantageError("No parseable daily price history returned.")
+        frame = frame.astype(float).sort_index()
+        frame.index.name = "date"
+        return frame
 
     async def get_latest_earnings_transcript(self, symbol: str) -> dict[str, Any] | None:
         metadata = await self.get_quarterly_earnings_metadata(symbol)
