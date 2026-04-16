@@ -57,6 +57,22 @@ class AlphaVantageService:
                             )
                         await self._backoff(attempt)
                         continue
+                    info_message = str(payload.get("Information", ""))
+                    if any(
+                        marker in info_message.lower()
+                        for marker in (
+                            "consider spreading out",
+                            "rate limit",
+                            "per second",
+                            "per day",
+                        )
+                    ):
+                        if attempt == self.MAX_RETRIES:
+                            raise AlphaVantageError(
+                                "Alpha Vantage rate limit prevented this request after retries."
+                            )
+                        await self._backoff(attempt)
+                        continue
                     self.cache.set_json(
                         cache_key,
                         payload,
@@ -77,7 +93,7 @@ class AlphaVantageService:
     async def get_daily_adjusted(self, symbol: str, *, outputsize: str = "compact") -> pd.DataFrame:
         payload = await self._request(
             params={
-                "function": "TIME_SERIES_DAILY_ADJUSTED",
+                "function": "TIME_SERIES_DAILY",
                 "symbol": symbol,
                 "outputsize": outputsize,
             },
@@ -86,14 +102,9 @@ class AlphaVantageService:
         if frame is not None:
             return frame
 
-        # Alpha Vantage has moved adjusted daily prices behind a premium plan.
-        info_message = str(payload.get("Information", ""))
-        if "premium endpoint" not in info_message.lower():
-            raise AlphaVantageError(f"No daily price history returned for {symbol}.")
-
         payload = await self._request(
             params={
-                "function": "TIME_SERIES_DAILY",
+                "function": "TIME_SERIES_DAILY_ADJUSTED",
                 "symbol": symbol,
                 "outputsize": outputsize,
             },

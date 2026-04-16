@@ -93,30 +93,25 @@ def test_daily_adjusted_history_is_vectorized_and_sorted() -> None:
     assert list(frame.columns) == ["adjusted_close", "close", "volume"]
     assert frame.index.name == "date"
     assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
-    assert float(frame.iloc[-1]["adjusted_close"]) == 169.55
+    assert float(frame.iloc[-1]["adjusted_close"]) == 170.10
 
 
-class PremiumAdjustedAlphaVantage(StubAlphaVantage):
+class DailyUnavailableAlphaVantage(StubAlphaVantage):
     async def _request(self, *, params: dict[str, Any], ttl_seconds: int = 60 * 60 * 12) -> Any:  # noqa: ARG002
-        if params["function"] == "TIME_SERIES_DAILY_ADJUSTED":
-            return {
-                "Information": (
-                    "Thank you for using Alpha Vantage! This is a premium endpoint. "
-                    "You may subscribe to any of the premium plans to unlock all premium endpoints."
-                )
-            }
+        if params["function"] == "TIME_SERIES_DAILY":
+            return {"Information": "No free daily data available for this symbol"}
         return await super()._request(params=params, ttl_seconds=ttl_seconds)
 
 
-def test_daily_adjusted_history_falls_back_to_free_daily_endpoint() -> None:
-    service = PremiumAdjustedAlphaVantage()
+def test_daily_adjusted_history_falls_back_to_adjusted_endpoint() -> None:
+    service = DailyUnavailableAlphaVantage()
 
     frame = asyncio.run(service.get_daily_adjusted("AAPL", outputsize="full"))
 
     assert list(frame.columns) == ["adjusted_close", "close", "volume"]
     assert frame.index.name == "date"
     assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
-    assert float(frame.iloc[-1]["adjusted_close"]) == 170.10
+    assert float(frame.iloc[-1]["adjusted_close"]) == 169.55
     assert float(frame.iloc[-1]["close"]) == 170.10
 
 
