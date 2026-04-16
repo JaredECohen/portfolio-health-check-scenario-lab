@@ -101,6 +101,18 @@ class AlphaVantageService:
         frame = self._daily_frame_from_payload(payload)
         if frame is not None:
             return frame
+        info_message = str(payload.get("Information", "")).lower()
+        if outputsize == "full" and "outputsize=full" in info_message and "premium feature" in info_message:
+            payload = await self._request(
+                params={
+                    "function": "TIME_SERIES_DAILY",
+                    "symbol": symbol,
+                    "outputsize": "compact",
+                },
+            )
+            frame = self._daily_frame_from_payload(payload)
+            if frame is not None:
+                return frame
 
         payload = await self._request(
             params={
