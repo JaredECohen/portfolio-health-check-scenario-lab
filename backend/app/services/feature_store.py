@@ -1,9 +1,13 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from typing import Any
 
+import pandas as pd
+
 from app.database import Database
+from app.services.factor_registry import CORE_FACTOR_DATASETS
 
 
 class FeatureStore:
@@ -45,6 +49,56 @@ class FeatureStore:
         with self.database.connect() as connection:
             rows = connection.execute(query, params).fetchall()
         return [dict(row) for row in rows]
+
+    def latest_company_fundamentals_panel(
+        self,
+        tickers: list[str],
+        metrics: list[str] | None = None,
+        *,
+        chunk_size: int = 250,
+    ) -> list[dict[str, Any]]:
+        normalized = [ticker.upper().strip() for ticker in dict.fromkeys(tickers) if ticker.strip()]
+        if not normalized:
+            return []
+        metric_filter = ""
+        metric_params: list[Any] = []
+        if metrics:
+            placeholders = ", ".join("?" for _ in metrics)
+            metric_filter = f"AND metric IN ({placeholders})"
+            metric_params.extend(metrics)
+        rows: list[dict[str, Any]] = []
+        for start in range(0, len(normalized), chunk_size):
+            ticker_chunk = normalized[start : start + chunk_size]
+            ticker_placeholders = ", ".join("?" for _ in ticker_chunk)
+            query = f"""
+                WITH ranked AS (
+                    SELECT
+                        ticker,
+                        metric,
+                        period_end,
+                        fiscal_period,
+                        fiscal_year,
+                        value,
+                        unit,
+                        form_type,
+                        filed_at,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY ticker, metric
+                            ORDER BY period_end DESC, filed_at DESC
+                        ) AS row_num
+                    FROM fact_company_fundamentals
+                    WHERE ticker IN ({ticker_placeholders})
+                    {metric_filter}
+                )
+                SELECT ticker, metric, period_end, fiscal_period, fiscal_year, value, unit, form_type, filed_at
+                FROM ranked
+                WHERE row_num = 1
+                ORDER BY ticker, metric
+            """
+            params = [*ticker_chunk, *metric_params]
+            with self.database.connect() as connection:
+                rows.extend(dict(row) for row in connection.execute(query, params).fetchall())
+        return rows
 
     def trailing_fundamental_trend(self, ticker: str, metric: str, limit: int = 8) -> list[dict[str, Any]]:
         with self.database.connect() as connection:
@@ -94,3 +148,49 @@ class FeatureStore:
             item["metadata"] = json.loads(item.pop("metadata_json")) if item.get("metadata_json") else None
             results.append(item)
         return results
+
+    def factor_model_frame(
+        self,
+        *,
+        frequency: str = "daily",
+        start_date: date | None = None,
+        end_date: date | None = None,
+        dataset_ids: list[str] | None = None,
+        factors: list[str] | None = None,
+    ) -> pd.DataFrame:
+        selected_datasets = dataset_ids or CORE_FACTOR_DATASETS.get(frequency, [])
+        if not selected_datasets:
+            return pd.DataFrame()
+        params: list[Any] = [frequency, *selected_datasets]
+        dataset_placeholders = ", ".join("?" for _ in selected_datasets)
+        factor_filter = ""
+        if factors:
+            factor_placeholders = ", ".join("?" for _ in factors)
+            factor_filter = f"AND factor IN ({factor_placeholders})"
+            params.extend(factors)
+        date_filter = ""
+        if start_date is not None:
+            date_filter += " AND date >= ?"
+            params.append(start_date.isoformat())
+        if end_date is not None:
+            date_filter += " AND date <= ?"
+            params.append(end_date.isoformat())
+        query = f"""
+            SELECT date, factor, value
+            FROM fact_factor_returns
+            WHERE frequency = ?
+              AND dataset_id IN ({dataset_placeholders})
+              {factor_filter}
+              {date_filter}
+            ORDER BY date
+        """
+        with self.database.connect() as connection:
+            rows = connection.execute(query, params).fetchall()
+        if not rows:
+            return pd.DataFrame()
+        frame = pd.DataFrame([dict(row) for row in rows])
+        if frame.empty:
+            return frame
+        pivot = frame.pivot_table(index="date", columns="factor", values="value", aggfunc="first").sort_index()
+        pivot.index = pd.to_datetime(pivot.index)
+        return pivot

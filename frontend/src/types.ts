@@ -7,14 +7,23 @@ export interface TickerMetadata {
   asset_type: "Equity";
 }
 
+export interface TickerQuote {
+  ticker: string;
+  price: number;
+  as_of: string;
+}
+
 export interface HoldingRow {
   ticker: string;
   shares: string;
-  cost_basis: string;
+  market_value: string;
   company_name?: string | null;
   sector?: string | null;
   cik?: string | null;
   exchange?: string | null;
+  latest_price?: number | null;
+  price_as_of?: string | null;
+  last_edited?: "shares" | "market_value" | null;
 }
 
 export interface HypotheticalInput {
@@ -153,6 +162,7 @@ export interface CandidateSearchResult {
   objective: string;
   method: string;
   candidates: CandidateRank[];
+  screening_summary?: string[];
 }
 
 export interface EntityFrequency {
@@ -206,6 +216,24 @@ export interface OverlayBundle {
       filing_available: boolean;
     }>;
   } | null;
+}
+
+export interface ResearchAgenda {
+  focus_areas: string[];
+  analysis_ideas: string[];
+  follow_up_questions: string[];
+  overlay_requests: string[];
+  candidate_search_guidance: string[];
+  memo_watchouts: string[];
+}
+
+export interface ResearchSynthesis {
+  integrated_insights: string[];
+  confirmations: string[];
+  tensions: string[];
+  eda_implications: string[];
+  candidate_search_implications: string[];
+  memo_implications: string[];
 }
 
 export interface ArtifactRecord {
@@ -263,9 +291,20 @@ export interface AnalysisResponse {
     objective: string;
     explanation: string;
     dynamic_workflow: string;
+    relevant_tickers?: string[];
     macro_themes?: string[];
     preferred_data_sources?: string[];
+    dataset_selection_rationale?: string[];
+    optimization_preferences?: Array<{
+      metric: string;
+      direction: string;
+      hard_constraint?: boolean;
+    }>;
+    comparison_universe?: string;
+    comparison_sector_filters?: string[];
+    comparison_ticker_limit?: number | null;
     investigation_steps: string[];
+    caveats?: string[];
   };
   dynamic_eda: {
     workflow: string;
@@ -278,6 +317,10 @@ export interface AnalysisResponse {
     candidate_search?: CandidateSearchResult | null;
   };
   overlays: OverlayBundle;
+  agent_collaboration?: {
+    research_agenda?: ResearchAgenda | null;
+    research_synthesis?: ResearchSynthesis | null;
+  } | null;
   final_memo: {
     title: string;
     thesis: string;

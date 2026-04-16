@@ -1,4 +1,4 @@
-import { AnalysisResponse, TickerMetadata } from "../types";
+import { AnalysisResponse, TickerMetadata, TickerQuote } from "../types";
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "http://localhost:8000";
 
@@ -46,6 +46,10 @@ export async function getTickerDetails(ticker: string): Promise<TickerMetadata> 
   return response.json();
 }
 
-export function resolveArtifactUrl(url: string): string {
-  return `${API_BASE}${url}`;
+export async function getTickerQuote(ticker: string): Promise<TickerQuote> {
+  const response = await fetch(`${API_BASE}/api/tickers/${encodeURIComponent(ticker)}/quote`);
+  if (!response.ok) {
+    throw new Error("Unable to load ticker quote.");
+  }
+  return response.json();
 }

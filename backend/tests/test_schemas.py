@@ -3,7 +3,15 @@ from datetime import date
 import pytest
 
 from app.config import Settings
-from app.models.schemas import AnalysisPlan, Holding, HypotheticalPosition, PortfolioInput, QuestionType
+from app.models.schemas import (
+    AnalysisPlan,
+    Holding,
+    HypotheticalPosition,
+    PortfolioInput,
+    QuestionType,
+    ResearchAgenda,
+    ResearchSynthesis,
+)
 
 
 def test_hypothetical_position_requires_exactly_one_sizing_method() -> None:
@@ -38,6 +46,17 @@ def test_analysis_plan_macro_fields_default_empty() -> None:
     assert plan.macro_themes == []
     assert plan.preferred_data_sources == []
     assert plan.dataset_selection_rationale == []
+    assert plan.optimization_preferences == []
+
+
+def test_research_collaboration_models_default_empty() -> None:
+    agenda = ResearchAgenda()
+    synthesis = ResearchSynthesis()
+
+    assert agenda.focus_areas == []
+    assert agenda.follow_up_questions == []
+    assert synthesis.integrated_insights == []
+    assert synthesis.memo_implications == []
 
 
 def test_settings_accepts_legacy_eai_api_key_alias(monkeypatch: pytest.MonkeyPatch) -> None:

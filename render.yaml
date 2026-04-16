@@ -1,16 +1,35 @@
 services:
   - type: web
     name: portfolio-health-check-backend
-    env: docker
+    runtime: docker
+    plan: starter
+    region: virginia
     dockerContext: ./backend
     dockerfilePath: ./backend/Dockerfile
+    healthCheckPath: /api/health
     envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: portfolio-health-check-db
+          property: connectionString
       - key: OPENAI_API_KEY
         sync: false
       - key: ALPHA_VANTAGE_API_KEY
         sync: false
       - key: SEC_USER_AGENT
         sync: false
+      - key: FRED_API_KEY
+        sync: false
+      - key: BEA_API_KEY
+        sync: false
+      - key: BLS_API_KEY
+        sync: false
+      - key: CENSUS_API_KEY
+        sync: false
+      - key: EIA_API_KEY
+        sync: false
+      - key: PORTFOLIO_APP_ENV
+        value: production
       - key: PORTFOLIO_API_CORS_ORIGINS
         value: https://portfolio-health-check-frontend.onrender.com
   - type: web
@@ -23,3 +42,7 @@ services:
       - key: VITE_API_BASE_URL
         value: https://portfolio-health-check-backend.onrender.com
 
+databases:
+  - name: portfolio-health-check-db
+    plan: basic-1gb
+    region: virginia

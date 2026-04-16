@@ -1,4 +1,4 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import { describe, expect, it } from "vitest";
 import { ResultsPanel } from "./ResultsPanel";
 import type { AnalysisResponse } from "../types";
@@ -72,7 +72,9 @@ function buildResult(): AnalysisResponse {
       objective: "what_if_addition",
       explanation: "Scenario analysis selected.",
       dynamic_workflow: "what_if",
-      investigation_steps: [],
+      preferred_data_sources: ["KEN_FRENCH_FF5_DAILY", "EARNINGS_TRANSCRIPTS"],
+      dataset_selection_rationale: ["Factor data is needed to separate market exposure from stock-specific impact."],
+      investigation_steps: ["Run the scenario model and compare the major delta metrics."],
     },
     dynamic_eda: {
       workflow: "what_if",
@@ -170,6 +172,24 @@ function buildResult(): AnalysisResponse {
         ],
       },
     },
+    agent_collaboration: {
+      research_agenda: {
+        focus_areas: ["Check whether the improvement is factor-driven or stock-specific."],
+        analysis_ideas: ["Compare the scenario outcome to a factor-attribution readout."],
+        follow_up_questions: ["Does the added name improve Sharpe because of momentum exposure?"],
+        overlay_requests: ["Review the latest earnings tone before finalizing the recommendation."],
+        candidate_search_guidance: ["Favor names that improve Sharpe without raising beta materially."],
+        memo_watchouts: ["Do not overstate causality from the historical window."],
+      },
+      research_synthesis: {
+        integrated_insights: ["The first-pass EDA and overlay both point to improving risk-adjusted return."],
+        confirmations: ["Scenario Sharpe improved in the selected window."],
+        tensions: ["The overlay suggests guidance risk is still present."],
+        eda_implications: ["Keep the factor attribution in view when describing the scenario."],
+        candidate_search_implications: ["Prefer names with positive momentum and lower portfolio correlation."],
+        memo_implications: ["Frame the result as conditional on the trailing sample."],
+      },
+    },
     final_memo: {
       title: "Memo",
       thesis: "Thesis",
@@ -231,5 +251,18 @@ describe("ResultsPanel", () => {
 
     expect(screen.getByText("+2.0000%")).toHaveClass("scenario-delta--bad");
     expect(screen.getByText("+0.1000")).toHaveClass("scenario-delta--good");
+  });
+
+  it("opens the analysis trace modal with agent handoff details", () => {
+    render(<ResultsPanel result={buildResult()} />);
+
+    fireEvent.click(screen.getByRole("button", { name: /follow analysis trace/i }));
+
+    expect(screen.getByRole("dialog", { name: /agent analysis trace/i })).toBeInTheDocument();
+    expect(screen.getByText("Planner Agent")).toBeInTheDocument();
+    expect(screen.getByText("Dynamic EDA Agent")).toBeInTheDocument();
+    expect(screen.getByText("Research Director Agent")).toBeInTheDocument();
+    expect(screen.getByText(/does not expose private hidden chain-of-thought/i)).toBeInTheDocument();
+    expect(screen.getByText("Requested source: KEN_FRENCH_FF5_DAILY")).toBeInTheDocument();
   });
 });

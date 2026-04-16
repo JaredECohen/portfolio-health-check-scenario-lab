@@ -1,8 +1,21 @@
-import { startTransition, useMemo, useState } from "react";
+import { startTransition, useEffect, useMemo, useRef, useState } from "react";
 import { SearchableTickerInput } from "./components/SearchableTickerInput";
 import { ResultsPanel } from "./components/ResultsPanel";
-import { analyzePortfolio, getTickerDetails } from "./lib/api";
-import type { AnalysisResponse, HoldingRow, HypotheticalInput, TickerMetadata } from "./types";
+import { analyzePortfolio, getTickerDetails, getTickerQuote } from "./lib/api";
+import {
+  applyQuoteToHolding,
+  clearCalculatedHoldingValue,
+  hasValidShareCount,
+  updateHoldingFromMarketValue,
+  updateHoldingFromShares,
+} from "./lib/holdingSync";
+import type {
+  AnalysisResponse,
+  HoldingRow,
+  HypotheticalInput,
+  TickerMetadata,
+  TickerQuote,
+} from "./types";
 
 const QUESTION_EXAMPLES = [
   "What should I add to my portfolio to diversify?",
@@ -12,14 +25,56 @@ const QUESTION_EXAMPLES = [
 ];
 
 function createBlankHolding(): HoldingRow {
-  return { ticker: "", shares: "", cost_basis: "", company_name: "", sector: "" };
+  return {
+    ticker: "",
+    shares: "",
+    market_value: "",
+    company_name: "",
+    sector: "",
+    latest_price: null,
+    price_as_of: null,
+    last_edited: null,
+  };
 }
+
+const currencyFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+  maximumFractionDigits: 2,
+});
 
 export default function App() {
   const [holdings, setHoldings] = useState<HoldingRow[]>([
-    { ticker: "AAPL", shares: "25", cost_basis: "182", company_name: "Apple Inc", sector: "Technology" },
-    { ticker: "JPM", shares: "18", cost_basis: "168", company_name: "JPMorgan Chase & Co", sector: "Financial Services" },
-    { ticker: "XOM", shares: "30", cost_basis: "110", company_name: "Exxon Mobil Corp", sector: "Energy" },
+    {
+      ticker: "AAPL",
+      shares: "25",
+      market_value: "",
+      company_name: "Apple Inc",
+      sector: "Technology",
+      latest_price: null,
+      price_as_of: null,
+      last_edited: "shares",
+    },
+    {
+      ticker: "JPM",
+      shares: "18",
+      market_value: "",
+      company_name: "JPMorgan Chase & Co",
+      sector: "Financial Services",
+      latest_price: null,
+      price_as_of: null,
+      last_edited: "shares",
+    },
+    {
+      ticker: "XOM",
+      shares: "30",
+      market_value: "",
+      company_name: "Exxon Mobil Corp",
+      sector: "Energy",
+      latest_price: null,
+      price_as_of: null,
+      last_edited: "shares",
+    },
   ]);
   const [question, setQuestion] = useState(QUESTION_EXAMPLES[0]);
   const [startDate, setStartDate] = useState("");
@@ -32,11 +87,72 @@ export default function App() {
   const [result, setResult] = useState<AnalysisResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [quoteErrors, setQuoteErrors] = useState<Record<string, string>>({});
+  const quoteCache = useRef<Record<string, TickerQuote>>({});
 
   const readyHoldings = useMemo(
-    () => holdings.filter((holding) => holding.ticker && holding.shares),
+    () => holdings.filter((holding) => holding.ticker && hasValidShareCount(holding)),
     [holdings],
   );
+
+  useEffect(() => {
+    const pendingTickers = Array.from(
+      new Set(
+        holdings
+          .map((holding) => holding.ticker.trim().toUpperCase())
+          .filter((ticker) => ticker && !quoteCache.current[ticker]),
+      ),
+    );
+    if (pendingTickers.length === 0) {
+      return;
+    }
+    let cancelled = false;
+    void Promise.all(
+      pendingTickers.map(async (ticker) => {
+        try {
+          return { ticker, quote: await getTickerQuote(ticker), error: null };
+        } catch {
+          return { ticker, quote: null, error: "Unable to load latest price." };
+        }
+      }),
+    ).then((results) => {
+      if (cancelled) {
+        return;
+      }
+      const loadedQuotes: TickerQuote[] = [];
+      const nextErrors: Record<string, string> = {};
+      for (const result of results) {
+        if (result.quote) {
+          loadedQuotes.push(result.quote);
+          continue;
+        }
+        if (result.error) {
+          nextErrors[result.ticker] = result.error;
+        }
+      }
+      if (loadedQuotes.length > 0) {
+        for (const quote of loadedQuotes) {
+          quoteCache.current[quote.ticker] = quote;
+        }
+        setHoldings((current) =>
+          current.map((holding) => {
+            const quote = quoteCache.current[holding.ticker];
+            return quote ? applyQuoteToHolding(holding, quote) : holding;
+          }),
+        );
+      }
+      setQuoteErrors((current) => {
+        const next = { ...current, ...nextErrors };
+        for (const quote of loadedQuotes) {
+          delete next[quote.ticker];
+        }
+        return next;
+      });
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [holdings]);
 
   async function handleAnalyze() {
     const hasHypotheticalSize = Boolean(hypothetical.shares) || Boolean(hypothetical.target_weight);
@@ -55,7 +171,6 @@ export default function App() {
         holdings: readyHoldings.map((holding) => ({
           ticker: holding.ticker,
           shares: Number(holding.shares),
-          cost_basis: holding.cost_basis ? Number(holding.cost_basis) : null,
           company_name: holding.company_name,
           sector: holding.sector,
           cik: holding.cik,
@@ -98,20 +213,38 @@ export default function App() {
         resolvedTicker = ticker;
       }
     }
+    const cachedQuote = quoteCache.current[resolvedTicker.ticker];
     setHoldings((current) =>
       current.map((item, itemIndex) =>
         itemIndex === index
-          ? {
-              ...item,
-              ticker: resolvedTicker.ticker,
-              company_name: resolvedTicker.company_name,
-              sector: resolvedTicker.sector || "Unknown",
-              cik: resolvedTicker.cik,
-              exchange: resolvedTicker.exchange,
-            }
+          ? cachedQuote
+            ? applyQuoteToHolding(
+                {
+                  ...item,
+                  ticker: resolvedTicker.ticker,
+                  company_name: resolvedTicker.company_name,
+                  sector: resolvedTicker.sector || "Unknown",
+                  cik: resolvedTicker.cik,
+                  exchange: resolvedTicker.exchange,
+                },
+                cachedQuote,
+              )
+            : clearCalculatedHoldingValue({
+                ...item,
+                ticker: resolvedTicker.ticker,
+                company_name: resolvedTicker.company_name,
+                sector: resolvedTicker.sector || "Unknown",
+                cik: resolvedTicker.cik,
+                exchange: resolvedTicker.exchange,
+              })
           : item,
       ),
     );
+    setQuoteErrors((current) => {
+      const next = { ...current };
+      delete next[resolvedTicker.ticker];
+      return next;
+    });
   }
 
   async function updateHypothetical(ticker: TickerMetadata) {
@@ -188,23 +321,27 @@ export default function App() {
                       onChange={(event) =>
                         setHoldings((current) =>
                           current.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, shares: event.target.value } : item,
+                            itemIndex === index
+                              ? updateHoldingFromShares(item, event.target.value)
+                              : item,
                           ),
                         )
                       }
                     />
                   </label>
                   <label className="field-group">
-                    <span className="field-label">Cost basis</span>
+                    <span className="field-label">Market value</span>
                     <input
                       type="number"
                       min="0"
                       step="0.01"
-                      value={holding.cost_basis}
+                      value={holding.market_value}
                       onChange={(event) =>
                         setHoldings((current) =>
                           current.map((item, itemIndex) =>
-                            itemIndex === index ? { ...item, cost_basis: event.target.value } : item,
+                            itemIndex === index
+                              ? updateHoldingFromMarketValue(item, event.target.value)
+                              : item,
                           ),
                         )
                       }
@@ -219,6 +356,20 @@ export default function App() {
                   <div className="readout readout--stacked">
                     <span className="field-label">Sector</span>
                     <strong>{holding.sector || "Auto-fill after ticker selection"}</strong>
+                  </div>
+                  <div className="readout readout--stacked">
+                    <span className="field-label">Latest price</span>
+                    <strong>
+                      {holding.latest_price
+                        ? `${currencyFormatter.format(holding.latest_price)}${
+                            holding.price_as_of ? ` as of ${holding.price_as_of}` : ""
+                          }`
+                        : quoteErrors[holding.ticker]
+                          ? "Latest price unavailable"
+                          : holding.ticker
+                            ? "Fetching latest price..."
+                            : "Select ticker to calculate"}
+                    </strong>
                   </div>
                 </div>
               </div>
@@ -288,14 +439,6 @@ export default function App() {
                 onChange={(event) => setEndDate(event.target.value)}
               />
             </label>
-            <div className="readout readout--stacked">
-              <span className="field-label">Window behavior</span>
-              <strong>
-                {startDate || endDate
-                  ? "Dates are optional. If you set one or both, portfolio analytics and overlays use that bounded window only."
-                  : "Dates are optional. Leaving both blank uses the default trailing 252-trading-day window."}
-              </strong>
-            </div>
           </div>
           <textarea
             rows={5}

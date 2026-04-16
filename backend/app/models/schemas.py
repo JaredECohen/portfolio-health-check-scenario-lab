@@ -90,6 +90,12 @@ class TickerMetadata(BaseModel):
     asset_type: AssetType = AssetType.equity
 
 
+class TickerQuote(BaseModel):
+    ticker: str
+    price: float = Field(gt=0)
+    as_of: date
+
+
 class PositionSnapshot(BaseModel):
     ticker: str
     company_name: str
@@ -293,6 +299,36 @@ class CandidateSearchResult(BaseModel):
     objective: str
     method: str
     candidates: list[CandidateRank]
+    screening_summary: list[str] = Field(default_factory=list)
+
+
+class OptimizationPreference(BaseModel):
+    metric: str
+    direction: str
+    hard_constraint: bool = False
+
+
+class ResearchAgenda(BaseModel):
+    focus_areas: list[str] = Field(default_factory=list)
+    analysis_ideas: list[str] = Field(default_factory=list)
+    follow_up_questions: list[str] = Field(default_factory=list)
+    overlay_requests: list[str] = Field(default_factory=list)
+    candidate_search_guidance: list[str] = Field(default_factory=list)
+    memo_watchouts: list[str] = Field(default_factory=list)
+
+
+class ResearchSynthesis(BaseModel):
+    integrated_insights: list[str] = Field(default_factory=list)
+    confirmations: list[str] = Field(default_factory=list)
+    tensions: list[str] = Field(default_factory=list)
+    eda_implications: list[str] = Field(default_factory=list)
+    candidate_search_implications: list[str] = Field(default_factory=list)
+    memo_implications: list[str] = Field(default_factory=list)
+
+
+class AgentCollaboration(BaseModel):
+    research_agenda: ResearchAgenda | None = None
+    research_synthesis: ResearchSynthesis | None = None
 
 
 class AnalysisPlan(BaseModel):
@@ -309,6 +345,7 @@ class AnalysisPlan(BaseModel):
     macro_themes: list[str] = Field(default_factory=list)
     preferred_data_sources: list[str] = Field(default_factory=list)
     dataset_selection_rationale: list[str] = Field(default_factory=list)
+    optimization_preferences: list[OptimizationPreference] = Field(default_factory=list)
     comparison_universe: str = "portfolio_only"
     comparison_sector_filters: list[str] = Field(default_factory=list)
     comparison_ticker_limit: int | None = None
@@ -370,6 +407,7 @@ class AnalysisResponse(BaseModel):
     plan: AnalysisPlan
     dynamic_eda: DynamicEDAResult
     overlays: OverlayBundle
+    agent_collaboration: AgentCollaboration | None = None
     final_memo: FinalMemo
     critic: CriticResult
     warnings: list[AnalysisWarning] = Field(default_factory=list)

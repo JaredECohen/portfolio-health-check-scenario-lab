@@ -137,7 +137,7 @@ class StubSecSampleIngestionService(SecBulkIngestionService):
         super().__init__(database, user_agent="test@example.com")
         self.responses = responses
 
-    def _request_json(self, url: str) -> dict:
+    def _request_json(self, url: str, *, client=None) -> dict:  # noqa: ANN001, ARG002
         return self.responses[url]
 
 
@@ -213,6 +213,104 @@ def test_sec_sample_bootstrap_loads_from_dim_company(tmp_path: Path) -> None:
     assert run["source"] == "sec_sample"
     assert run["status"] == "success"
     assert run["row_count"] == 3
+
+
+def test_sec_sample_bootstrap_records_resume_metadata(tmp_path: Path) -> None:
+    database = Database(tmp_path / "app.db")
+    database.initialize()
+    with database.connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO dim_company(ticker, cik, company_name, sector, industry, exchange, updated_at)
+            VALUES(?, ?, ?, ?, ?, ?, ?)
+            """,
+            ("AAPL", "CIK0000320193", "Apple Inc.", "Technology", "Consumer Electronics", "NASDAQ", "2026-01-01T00:00:00+00:00"),
+        )
+    responses = {
+        "https://data.sec.gov/api/xbrl/companyfacts/CIK0000320193.json": {
+            "cik": 320193,
+            "entityName": "Apple Inc.",
+            "tickers": ["AAPL"],
+            "facts": {},
+        },
+        "https://data.sec.gov/submissions/CIK0000320193.json": {
+            "cik": "0000320193",
+            "name": "Apple Inc.",
+            "tickers": ["AAPL"],
+            "filings": {"recent": {"accessionNumber": [], "form": [], "filingDate": [], "acceptanceDateTime": [], "primaryDocument": [], "isXBRL": [], "isInlineXBRL": []}},
+        },
+    }
+
+    service = StubSecSampleIngestionService(database, responses)
+    result = service.bootstrap_sample_from_dim_company(max_companies=1, offset=0, source="sec_refresh")
+
+    assert result.requested_companies == 1
+    assert result.requested_unique_ciks == 1
+    assert result.failed_companies == 0
+    assert result.next_offset == 1
+
+    with database.connect() as connection:
+        run = connection.execute(
+            "SELECT details_json FROM ingestion_runs WHERE source = 'sec_refresh' ORDER BY started_at DESC LIMIT 1"
+        ).fetchone()
+    assert run is not None
+    details = json.loads(run["details_json"])
+    assert details["offset"] == 0
+    assert details["requested_companies"] == 1
+    assert details["requested_unique_ciks"] == 1
+    assert details["failed_companies"] == 0
+    assert details["next_offset"] == 1
+
+
+def test_sec_refresh_cleanup_and_resume_offset(tmp_path: Path) -> None:
+    database = Database(tmp_path / "app.db")
+    database.initialize()
+    service = SecBulkIngestionService(database, user_agent="test@example.com")
+    with database.connect() as connection:
+        connection.execute(
+            """
+            INSERT INTO ingestion_runs(run_id, source, started_at, status, row_count, details_json)
+            VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            ("sec-bulk-stale", "sec_bulk", "2026-04-15T04:17:54+00:00", "running", 0, None),
+        )
+        connection.execute(
+            """
+            INSERT INTO ingestion_runs(run_id, source, started_at, status, row_count, details_json)
+            VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            (
+                "sec-refresh-done",
+                "sec_refresh",
+                "2026-04-15T05:28:20+00:00",
+                "partial_success",
+                10,
+                json.dumps({"offset": 200, "requested_companies": 50, "next_offset": 250}),
+            ),
+        )
+        connection.execute(
+            """
+            INSERT INTO ingestion_runs(run_id, source, started_at, status, row_count, details_json)
+            VALUES(?, ?, ?, ?, ?, ?)
+            """,
+            ("sec-refresh-stale", "sec_refresh", "2026-04-15T05:30:34+00:00", "running", 0, None),
+        )
+
+    cleaned = service.cleanup_stale_runs(
+        sources=["sec_bulk", "sec_refresh"],
+        reason="Superseded by refresh_sec_company_data resume workflow.",
+    )
+
+    assert cleaned == 2
+    assert service.resume_offset_for_refresh(source="sec_refresh", fallback_offset=0) == 250
+
+    with database.connect() as connection:
+        rows = connection.execute(
+            "SELECT run_id, status, completed_at, details_json FROM ingestion_runs WHERE status = 'failed' ORDER BY run_id"
+        ).fetchall()
+    assert {row["run_id"] for row in rows} == {"sec-bulk-stale", "sec-refresh-stale"}
+    assert all(row["completed_at"] for row in rows)
+    assert all("cleanup_reason" in json.loads(row["details_json"]) for row in rows)
 
 
 class StubAlphaVantage:

@@ -19,6 +19,29 @@ class StubAlphaVantage(AlphaVantageService):
         super().__init__(api_key="test", cache=DummyCache())
 
     async def _request(self, *, params: dict[str, Any], ttl_seconds: int = 60 * 60 * 12) -> Any:  # noqa: ARG002
+        if params["function"] == "TIME_SERIES_DAILY_ADJUSTED":
+            return {
+                "Time Series (Daily)": {
+                    "2024-05-03": {
+                        "4. close": "170.10",
+                        "5. adjusted close": "169.55",
+                        "6. volume": "1234567",
+                    },
+                    "2024-05-02": {
+                        "4. close": "168.00",
+                        "5. adjusted close": "167.25",
+                        "6. volume": "7654321",
+                    },
+                }
+            }
+        if params["function"] == "TREASURY_YIELD":
+            return {
+                "data": [
+                    {"date": "2024-05-03", "value": "4.56"},
+                    {"date": "2024-05-02", "value": "4.61"},
+                    {"date": "2024-05-01", "value": "."},
+                ]
+            }
         if params["function"] == "EARNINGS":
             return {
                 "quarterlyEarnings": [
@@ -47,3 +70,26 @@ def test_windowed_earnings_transcript_uses_reported_date() -> None:
     assert transcript is not None
     assert transcript["quarter"] == "2024Q1"
     assert transcript["event_date"] == "2024-05-02"
+
+
+def test_daily_adjusted_history_is_vectorized_and_sorted() -> None:
+    service = StubAlphaVantage()
+
+    frame = asyncio.run(service.get_daily_adjusted("AAPL", outputsize="full"))
+
+    assert list(frame.columns) == ["adjusted_close", "close", "volume"]
+    assert frame.index.name == "date"
+    assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
+    assert float(frame.iloc[-1]["adjusted_close"]) == 169.55
+
+
+def test_economic_series_history_is_vectorized_and_filters_missing_values() -> None:
+    service = StubAlphaVantage()
+
+    frame = asyncio.run(service.get_treasury_yield())
+
+    assert list(frame.columns) == ["value"]
+    assert frame.index.name == "date"
+    assert len(frame) == 2
+    assert frame.index[0].isoformat() == "2024-05-02T00:00:00"
+    assert float(frame.iloc[-1]["value"]) == 4.56

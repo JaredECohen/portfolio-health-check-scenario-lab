@@ -9,8 +9,12 @@ from app.services.ingestion.sec_bulk import DEFAULT_METRICS, SecBulkIngestionSer
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(description="Bootstrap SEC bulk company facts and submissions into SQLite.")
-    parser.add_argument("--db-path", type=Path, default=get_settings().sqlite_path)
+    settings = get_settings()
+    parser = argparse.ArgumentParser(
+        description="Bootstrap SEC bulk company facts and submissions into the configured database."
+    )
+    parser.add_argument("--db-path", type=Path, default=None)
+    parser.add_argument("--database-url", default=settings.database_url)
     parser.add_argument("--max-companies", type=int, default=None)
     parser.add_argument(
         "--sample-from-dim-company",
@@ -25,13 +29,14 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument("--companyfacts-zip", type=Path, default=None)
     parser.add_argument("--submissions-zip", type=Path, default=None)
-    parser.add_argument("--user-agent", default=get_settings().sec_user_agent)
+    parser.add_argument("--user-agent", default=settings.sec_user_agent)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    database = Database(args.db_path)
+    settings = get_settings()
+    database = Database(args.database_url or args.db_path or settings.sqlite_path)
     database.initialize()
     service = SecBulkIngestionService(database, user_agent=args.user_agent)
     metrics = set(args.metrics)

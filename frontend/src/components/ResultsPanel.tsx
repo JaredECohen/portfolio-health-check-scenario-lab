@@ -1,6 +1,17 @@
-import { Fragment } from "react";
-import { resolveArtifactUrl } from "../lib/api";
+import { Fragment, useState } from "react";
 import type { AnalysisResponse, MetricCard, NLPTextSummary } from "../types";
+
+type TraceSection = {
+  label: string;
+  items: string[];
+};
+
+type TraceStep = {
+  agent: string;
+  stage: string;
+  summary: string;
+  sections: TraceSection[];
+};
 
 function currency(value: number) {
   return new Intl.NumberFormat("en-US", {
@@ -106,6 +117,111 @@ function correlationColor(value: number) {
   return `rgba(25, 101, 176, ${alpha})`;
 }
 
+function buildPolylinePoints(points: Array<{ x: number; y: number }>) {
+  return points.map((point) => `${point.x},${point.y}`).join(" ");
+}
+
+function renderPerformanceChart(
+  series: AnalysisResponse["baseline"]["performance_series"],
+  benchmarkSymbol: string,
+) {
+  if (series.length === 0) {
+    return <p className="chart-empty">Performance series unavailable.</p>;
+  }
+
+  const width = 560;
+  const height = 240;
+  const padding = 20;
+  const values = series.flatMap((point) => [point.portfolio_index, point.benchmark_index]);
+  const minValue = Math.min(...values);
+  const maxValue = Math.max(...values);
+  const valueRange = maxValue - minValue || 1;
+  const xStep = series.length === 1 ? 0 : (width - padding * 2) / (series.length - 1);
+  const projectY = (value: number) =>
+    height - padding - ((value - minValue) / valueRange) * (height - padding * 2);
+  const portfolioPoints = series.map((point, index) => ({
+    x: padding + index * xStep,
+    y: projectY(point.portfolio_index),
+  }));
+  const benchmarkPoints = series.map((point, index) => ({
+    x: padding + index * xStep,
+    y: projectY(point.benchmark_index),
+  }));
+  const startPoint = series[0];
+  const endPoint = series[series.length - 1];
+
+  return (
+    <div className="native-chart">
+      <div className="native-chart__legend">
+        <span>
+          <i className="native-chart__swatch native-chart__swatch--portfolio" />
+          Portfolio
+        </span>
+        <span>
+          <i className="native-chart__swatch native-chart__swatch--benchmark" />
+          {benchmarkSymbol}
+        </span>
+      </div>
+      <svg
+        className="native-chart__svg"
+        viewBox={`0 0 ${width} ${height}`}
+        role="img"
+        aria-label="Portfolio and benchmark cumulative performance"
+      >
+        <line x1={padding} y1={padding} x2={padding} y2={height - padding} className="native-chart__axis" />
+        <line
+          x1={padding}
+          y1={height - padding}
+          x2={width - padding}
+          y2={height - padding}
+          className="native-chart__axis"
+        />
+        <polyline
+          fill="none"
+          stroke="var(--ink)"
+          strokeWidth="3"
+          points={buildPolylinePoints(portfolioPoints)}
+        />
+        <polyline
+          fill="none"
+          stroke="var(--accent)"
+          strokeWidth="3"
+          points={buildPolylinePoints(benchmarkPoints)}
+        />
+      </svg>
+      <div className="native-chart__labels">
+        <span>{startPoint.date}</span>
+        <span>
+          Portfolio {startPoint.portfolio_index.toFixed(2)} -&gt; {endPoint.portfolio_index.toFixed(2)}
+        </span>
+        <span>{endPoint.date}</span>
+      </div>
+    </div>
+  );
+}
+
+function renderSectorExposureBars(sectors: AnalysisResponse["baseline"]["sector_exposures"]) {
+  if (sectors.length === 0) {
+    return <p className="chart-empty">Sector exposure unavailable.</p>;
+  }
+
+  return (
+    <div className="bar-chart">
+      {sectors.map((sector) => (
+        <article className="bar-chart__row" key={sector.sector}>
+          <div className="bar-chart__header">
+            <span>{sector.sector}</span>
+            <strong>{formatPercent(sector.weight)}</strong>
+          </div>
+          <div className="bar-chart__track">
+            <div className="bar-chart__fill" style={{ width: `${sector.weight * 100}%` }} />
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
+
 function renderCorrelationHeatmap(matrix: AnalysisResponse["baseline"]["correlation_matrix"]) {
   const tickers = Object.keys(matrix);
   if (tickers.length === 0) {
@@ -208,6 +324,270 @@ function warningSeverityLabel(severity: string) {
   return severity.charAt(0).toUpperCase() + severity.slice(1);
 }
 
+function humanize(value: string) {
+  const normalized = value.replace(/_/g, " ").trim();
+  return normalized.charAt(0).toUpperCase() + normalized.slice(1);
+}
+
+function traceItems(items: Array<string | null | undefined>) {
+  return items
+    .map((item) => item?.trim())
+    .filter((item): item is string => Boolean(item));
+}
+
+function summarizeOptimizationPreferences(result: AnalysisResponse) {
+  return (result.plan.optimization_preferences ?? []).map((preference) => {
+    const constraint = preference.hard_constraint ? " as a hard constraint" : "";
+    return `${humanize(preference.direction)} ${humanize(preference.metric)}${constraint}.`;
+  });
+}
+
+function summarizeFinding(finding: AnalysisResponse["dynamic_eda"]["findings"][number]) {
+  const evidence = finding.evidence.slice(0, 2).join(" ");
+  return evidence ? `${finding.headline} ${evidence}` : finding.headline;
+}
+
+function summarizeDataSource(source: NonNullable<AnalysisResponse["dynamic_eda"]["data_sources"]>[number]) {
+  return `${source.series}: ${source.rationale || source.description}`;
+}
+
+function summarizeScenarioDeltas(result: AnalysisResponse) {
+  const scenario = result.dynamic_eda.scenario_analysis;
+  if (!scenario) {
+    return [];
+  }
+  return [...scenario.deltas]
+    .sort((left, right) => Math.abs(right.delta ?? 0) - Math.abs(left.delta ?? 0))
+    .slice(0, 5)
+    .map((delta) => {
+      if (delta.delta === null) {
+        return `${humanize(delta.metric)} had no usable delta.`;
+      }
+      return `${humanize(delta.metric)} changed by ${formatDeltaValue(delta.metric, delta.delta)}.`;
+    });
+}
+
+function buildAnalysisTrace(result: AnalysisResponse): TraceStep[] {
+  const plannerSections: TraceSection[] = [
+    {
+      label: "Problem framing",
+      items: traceItems([
+        `Question: ${result.normalized_portfolio.question}`,
+        `Workflow: ${humanize(result.plan.dynamic_workflow)}`,
+        result.plan.explanation,
+      ]),
+    },
+    {
+      label: "Data needed",
+      items: traceItems([
+        ...(result.plan.relevant_tickers?.length ? [`Explicit tickers: ${result.plan.relevant_tickers.join(", ")}`] : []),
+        ...(result.plan.macro_themes?.length ? [`Macro themes: ${result.plan.macro_themes.join(", ")}`] : []),
+        ...(result.plan.preferred_data_sources?.map((source) => `Requested source: ${source}`) ?? []),
+        ...(result.plan.dataset_selection_rationale ?? []),
+        result.plan.comparison_universe ? `Comparison universe: ${humanize(result.plan.comparison_universe)}` : null,
+        result.plan.comparison_sector_filters?.length
+          ? `Sector filters: ${result.plan.comparison_sector_filters.join(", ")}`
+          : null,
+        result.plan.comparison_ticker_limit ? `Universe cap: ${result.plan.comparison_ticker_limit} names.` : null,
+      ]),
+    },
+    {
+      label: "Planned analysis",
+      items: traceItems([
+        ...result.plan.investigation_steps,
+        ...summarizeOptimizationPreferences(result),
+        ...(result.plan.caveats ?? []).map((item) => `Planner caveat: ${item}`),
+      ]),
+    },
+  ].filter((section) => section.items.length > 0);
+
+  const steps: TraceStep[] = [
+    {
+      agent: "Planner Agent",
+      stage: "Problem framing",
+      summary: `Classified the request as ${humanize(result.plan.question_type)} with a ${humanize(result.plan.objective)} objective.`,
+      sections: plannerSections,
+    },
+  ];
+
+  const edaSections: TraceSection[] = [
+    {
+      label: "Data actually used",
+      items: traceItems([
+        ...(result.dynamic_eda.data_sources?.map(summarizeDataSource) ?? []),
+        result.dynamic_eda.news_intel
+          ? `News query: ${result.dynamic_eda.news_intel.query} via ${result.dynamic_eda.news_intel.retrieval_sources.join(", ")}.`
+          : null,
+      ]),
+    },
+    {
+      label: "Analysis results",
+      items: result.dynamic_eda.findings.map(summarizeFinding),
+    },
+    {
+      label: "Structured outputs",
+      items: traceItems([
+        ...result.dynamic_eda.tables.map((table) => `${table.name} (${table.rows.length} rows).`),
+        result.dynamic_eda.candidate_search ? `Candidate search returned ${result.dynamic_eda.candidate_search.candidates.length} ranked names.` : null,
+        result.dynamic_eda.scenario_analysis ? `Scenario model ran for ${result.dynamic_eda.scenario_analysis.label}.` : null,
+      ]),
+    },
+  ].filter((section) => section.items.length > 0);
+
+  steps.push({
+    agent: "Dynamic EDA Agent",
+    stage: "Initial analysis",
+    summary: `Ran the ${humanize(result.dynamic_eda.workflow)} workflow across ${result.baseline.effective_observations} observations and produced ${result.dynamic_eda.findings.length} core findings.`,
+    sections: edaSections,
+  });
+
+  if (result.agent_collaboration?.research_agenda) {
+    const agenda = result.agent_collaboration.research_agenda;
+    steps.push({
+      agent: "Research Director Agent",
+      stage: "Follow-up agenda",
+      summary: "Turned the first-pass EDA into a deeper investigation plan and subsequent hypotheses.",
+      sections: [
+        { label: "Focus areas", items: agenda.focus_areas },
+        { label: "Next analyses", items: agenda.analysis_ideas },
+        { label: "Follow-up questions", items: agenda.follow_up_questions },
+        { label: "Overlay requests", items: agenda.overlay_requests },
+        { label: "Candidate search guidance", items: agenda.candidate_search_guidance },
+        { label: "Memo watchouts", items: agenda.memo_watchouts },
+      ].filter((section) => section.items.length > 0),
+    });
+  }
+
+  const overlaySections: TraceSection[] = [];
+  if (result.dynamic_eda.news_intel) {
+    overlaySections.push({
+      label: "News and narrative evidence",
+      items: traceItems([
+        `Dominant topics: ${result.dynamic_eda.news_intel.dominant_topics.join(", ") || "none identified"}.`,
+        ...result.dynamic_eda.news_intel.caveats,
+      ]),
+    });
+  }
+  if (result.overlays.macro) {
+    overlaySections.push({
+      label: "Macro overlay",
+      items: traceItems([
+        `Question focus: ${result.overlays.macro.question_focus}`,
+        ...result.overlays.macro.findings,
+        ...(result.overlays.macro.caveats ?? []).map((item) => `Macro caveat: ${item}`),
+      ]),
+    });
+  }
+  if (result.overlays.earnings) {
+    overlaySections.push({
+      label: "Earnings overlay",
+      items: result.overlays.earnings.companies.flatMap((company) =>
+        traceItems([
+          `${company.ticker}: ${company.findings.join(" ")}`,
+          company.nlp_summary?.keywords.length ? `${company.ticker} keywords: ${company.nlp_summary.keywords.join(", ")}` : null,
+        ]),
+      ),
+    });
+  }
+  if (result.overlays.filings) {
+    overlaySections.push({
+      label: "Filings overlay",
+      items: result.overlays.filings.companies.flatMap((company) =>
+        traceItems([
+          `${company.ticker}: ${company.findings.join(" ")}`,
+          company.nlp_summary?.keywords.length ? `${company.ticker} keywords: ${company.nlp_summary.keywords.join(", ")}` : null,
+        ]),
+      ),
+    });
+  }
+  if (overlaySections.length > 0) {
+    steps.push({
+      agent: "Overlay Agents",
+      stage: "External evidence",
+      summary: "Brought macro, news, earnings, and filings evidence back into the quantitative analysis.",
+      sections: overlaySections,
+    });
+  }
+
+  if (result.agent_collaboration?.research_synthesis) {
+    const synthesis = result.agent_collaboration.research_synthesis;
+    steps.push({
+      agent: "Research Synthesis Agent",
+      stage: "Interpretation and next hypotheses",
+      summary: "Merged the first-pass EDA and overlays into confirmations, tensions, and the next round of interpretation.",
+      sections: [
+        { label: "Integrated insights", items: synthesis.integrated_insights },
+        { label: "Confirmations", items: synthesis.confirmations },
+        { label: "Tensions", items: synthesis.tensions },
+        { label: "EDA implications", items: synthesis.eda_implications },
+        { label: "Candidate implications", items: synthesis.candidate_search_implications },
+        { label: "Memo implications", items: synthesis.memo_implications },
+      ].filter((section) => section.items.length > 0),
+    });
+  }
+
+  if (result.dynamic_eda.candidate_search || result.dynamic_eda.scenario_analysis) {
+    steps.push({
+      agent: "Decision Analysis Agents",
+      stage: "Simulation and ranking",
+      summary: "Converted the research into portfolio-change analysis, simulations, and ranked recommendations.",
+      sections: [
+        {
+          label: "Candidate search",
+          items: result.dynamic_eda.candidate_search
+            ? traceItems([
+                result.dynamic_eda.candidate_search.method,
+                ...(result.dynamic_eda.candidate_search.screening_summary ?? []),
+                ...result.dynamic_eda.candidate_search.candidates.slice(0, 3).map(
+                  (candidate) =>
+                    `${candidate.ticker} scored ${candidate.score.toFixed(3)}. ${candidate.rationale.slice(0, 2).join(" ")}`,
+                ),
+              ])
+            : [],
+        },
+        {
+          label: "Scenario results",
+          items: result.dynamic_eda.scenario_analysis
+            ? traceItems([
+                `${result.dynamic_eda.scenario_analysis.label}.`,
+                ...summarizeScenarioDeltas(result),
+              ])
+            : [],
+        },
+      ].filter((section) => section.items.length > 0),
+    });
+  }
+
+  steps.push({
+    agent: "Writer and Critic Agents",
+    stage: "Final interpretation and challenge",
+    summary: "Turned the evidence into a memo, then challenged the claims before the result was returned.",
+    sections: [
+      {
+        label: "Writer interpretation",
+        items: traceItems([result.final_memo.thesis, ...result.final_memo.executive_summary]),
+      },
+      {
+        label: "Evidence carried forward",
+        items: result.final_memo.evidence,
+      },
+      {
+        label: "Risks and caveats",
+        items: result.final_memo.risks_and_caveats,
+      },
+      {
+        label: "Critic review",
+        items: traceItems([
+          ...result.critic.approved_claims.map((item) => `Approved: ${item}`),
+          ...result.critic.flagged_claims.map((item) => `Flagged: ${item}`),
+        ]),
+      },
+    ].filter((section) => section.items.length > 0),
+  });
+
+  return steps;
+}
+
 function renderWarnings(warnings: AnalysisResponse["warnings"]) {
   const grouped = warnings.reduce<Map<string, AnalysisResponse["warnings"]>>((accumulator, warning) => {
     const current = accumulator.get(warning.source) ?? [];
@@ -250,13 +630,17 @@ function renderWarnings(warnings: AnalysisResponse["warnings"]) {
 }
 
 export function ResultsPanel({ result }: { result: AnalysisResponse | null }) {
+  const [isTraceOpen, setIsTraceOpen] = useState(false);
+
   if (!result) {
     return (
       <section className="results-empty">
-        <p>Run an analysis to generate the baseline health check, dynamic investigation, overlays, memo, and artifacts.</p>
+        <p>Run an analysis to generate the baseline health check, dynamic investigation, overlays, memo, and native charts.</p>
       </section>
     );
   }
+
+  const traceSteps = buildAnalysisTrace(result);
 
   return (
     <section className="results-shell">
@@ -276,15 +660,81 @@ export function ResultsPanel({ result }: { result: AnalysisResponse | null }) {
             </p>
           ) : null}
         </div>
-        <div className="results-total">
-          <span>Total Portfolio Value</span>
-          <strong>{currency(result.baseline.total_portfolio_value)}</strong>
+        <div className="results-header__aside">
+          <div className="results-total">
+            <span>Total Portfolio Value</span>
+            <strong>{currency(result.baseline.total_portfolio_value)}</strong>
+          </div>
+          <button type="button" className="ghost-button results-header__action" onClick={() => setIsTraceOpen(true)}>
+            Follow Analysis Trace
+          </button>
         </div>
       </div>
+
+      {isTraceOpen ? (
+        <div className="trace-modal" role="presentation" onClick={() => setIsTraceOpen(false)}>
+          <div
+            className="trace-modal__card"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="analysis-trace-title"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="trace-modal__header">
+              <div>
+                <p className="eyebrow">Explainability</p>
+                <h3 id="analysis-trace-title">Agent Analysis Trace</h3>
+                <p className="trace-modal__note">
+                  This is a structured summary of the agents&apos; plans, hypotheses, evidence, handoffs, and critiques.
+                  It does not expose private hidden chain-of-thought.
+                </p>
+              </div>
+              <button type="button" className="ghost-button" onClick={() => setIsTraceOpen(false)}>
+                Close
+              </button>
+            </div>
+            <div className="trace-list">
+              {traceSteps.map((step, index) => (
+                <article className="trace-step" key={`${step.agent}-${step.stage}`}>
+                  <div className="trace-step__header">
+                    <span className="trace-step__index">Step {index + 1}</span>
+                    <div>
+                      <h4>{step.agent}</h4>
+                      <p>{step.stage}</p>
+                    </div>
+                  </div>
+                  <p className="trace-step__summary">{step.summary}</p>
+                  <div className="trace-step__sections">
+                    {step.sections.map((section) => (
+                      <section className="trace-step__section" key={`${step.agent}-${section.label}`}>
+                        <span className="field-label">{section.label}</span>
+                        {section.items.length === 1 ? (
+                          <p>{section.items[0]}</p>
+                        ) : (
+                          <ul>
+                            {section.items.map((item) => (
+                              <li key={`${section.label}-${item}`}>{item}</li>
+                            ))}
+                          </ul>
+                        )}
+                      </section>
+                    ))}
+                  </div>
+                </article>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {result.warnings.length > 0 ? renderWarnings(result.warnings) : null}
 
       <div className="metrics-grid">{result.baseline.metrics.map(renderMetric)}</div>
+
+      <section className="panel">
+        <h3>Performance Trend</h3>
+        {renderPerformanceChart(result.baseline.performance_series, result.baseline.benchmark_symbol)}
+      </section>
 
       <section className="panel">
         <h3>Dynamic EDA Findings</h3>
@@ -383,14 +833,7 @@ export function ResultsPanel({ result }: { result: AnalysisResponse | null }) {
       <section className="panel two-column">
         <div>
           <h3>Sector Exposure</h3>
-          <ul className="simple-list">
-            {result.baseline.sector_exposures.map((sector) => (
-              <li key={sector.sector}>
-                <span>{sector.sector}</span>
-                <strong>{formatPercent(sector.weight)}</strong>
-              </li>
-            ))}
-          </ul>
+          {renderSectorExposureBars(result.baseline.sector_exposures)}
         </div>
         <div>
           <h3>Performance Drivers</h3>
@@ -442,6 +885,14 @@ export function ResultsPanel({ result }: { result: AnalysisResponse | null }) {
       {result.dynamic_eda.candidate_search ? (
         <section className="panel">
           <h3>Candidate Additions</h3>
+          <p>{result.dynamic_eda.candidate_search.method}</p>
+          {result.dynamic_eda.candidate_search.screening_summary?.length ? (
+            <ul>
+              {result.dynamic_eda.candidate_search.screening_summary.map((line) => (
+                <li key={line}>{line}</li>
+              ))}
+            </ul>
+          ) : null}
           <div className="candidate-grid">
             {result.dynamic_eda.candidate_search.candidates.map((candidate) => (
               <article className="candidate-card" key={candidate.ticker}>
@@ -664,23 +1115,6 @@ export function ResultsPanel({ result }: { result: AnalysisResponse | null }) {
               <li key={item}>{item}</li>
             ))}
           </ul>
-        </div>
-      </section>
-
-      <section className="panel">
-        <h3>Artifacts</h3>
-        <div className="artifact-grid">
-          {result.artifacts.map((artifact) => (
-            <article className="artifact-card" key={artifact.artifact_id}>
-              <h4>{artifact.title}</h4>
-              {artifact.kind.includes("chart") || artifact.kind.includes("performance") || artifact.kind.includes("heatmap") || artifact.kind.includes("sector") ? (
-                <img src={resolveArtifactUrl(artifact.url)} alt={artifact.title} />
-              ) : null}
-              <a href={resolveArtifactUrl(artifact.url)} target="_blank" rel="noreferrer">
-                Open artifact
-              </a>
-            </article>
-          ))}
         </div>
       </section>
     </section>

@@ -23,7 +23,7 @@ Most portfolio tools stop at static dashboards. This app answers portfolio quest
 - Searchable ticker dropdown backed by a local U.S. equity metadata file.
 - Manual portfolio builder with shares, optional cost basis, company, and sector.
 - Optional hypothetical addition with shares or target weight.
-- FastAPI backend with runtime data collection, analytics, caching, artifacts, and agent orchestration.
+- FastAPI backend with runtime data collection, analytics, caching, session persistence, and agent orchestration.
 - Fixed baseline portfolio analytics for every run.
 - Dynamic EDA workflows for:
   - General health check
@@ -37,11 +37,8 @@ Most portfolio tools stop at static dashboards. This app answers portfolio quest
 - Candidate addition ranking over a curated liquid U.S. equity universe.
 - Earnings transcript overlay from Alpha Vantage when selected by the planner.
 - SEC filing overlay from EDGAR when selected by the planner.
-- Persistent artifacts:
-  - PNG charts
-  - JSON analysis snapshot
-  - Markdown final memo
-- SQLite cache and session storage.
+- Native frontend charts rendered directly from API responses.
+- Cache and session storage backed by Render Postgres in production or SQLite locally.
 - Docker + Render deployment configuration.
 
 ## Screenshots
@@ -50,7 +47,7 @@ No screenshots are committed yet. After local startup, capture:
 
 - `docs/screenshots/portfolio-builder.png`
 - `docs/screenshots/results-baseline-and-memo.png`
-- `docs/screenshots/scenario-and-artifacts.png`
+- `docs/screenshots/scenario-and-results.png`
 
 The UI is designed so those three screenshots cover the major rubric items.
 
@@ -71,7 +68,7 @@ The UI is designed so those three screenshots cover the major rubric items.
   - Overlays
   - Memo
   - Critic output
-  - Artifact rendering
+  - Native chart rendering
 
 ### Backend
 
@@ -93,9 +90,9 @@ The UI is designed so those three screenshots cover the major rubric items.
 - `backend/data/candidate_universe.json`
   - Curated candidate additions universe
 - `backend/data/app.db`
-  - SQLite cache, session store, artifact metadata
-- `backend/artifacts/<session_id>/`
-  - Per-run charts and reports
+  - Local SQLite cache and session store when `DATABASE_URL` is unset
+- `DATABASE_URL`
+  - Production Postgres connection used by Render
 
 ## Agent Roster And Responsibilities
 
@@ -129,7 +126,7 @@ The UI is designed so those three screenshots cover the major rubric items.
 - Baseline Portfolio Analytics service
 - Scenario Simulation service
 - Dynamic EDA service
-- Artifact generation service
+- Session persistence service
 
 ## Which Components Are LLM Agents Vs Deterministic Tools
 
@@ -171,7 +168,7 @@ Behavior:
 - Macro series are fetched when the question requires them.
 - Earnings transcripts are fetched when the planner selects that overlay.
 - SEC filings are fetched when the planner selects that overlay.
-- All network responses are cached in SQLite.
+- All network responses are cached in the configured database.
 
 ### 2. EDA
 
@@ -345,8 +342,8 @@ Implemented in:
 - `GET /api/health`
 - `GET /api/tickers`
 - `GET /api/tickers/{ticker}`
+- `GET /api/tickers/{ticker}/quote`
 - `POST /api/analyze`
-- `GET /artifacts/<session_id>/<file>`
 
 ## Codebase Structure
 
@@ -359,7 +356,6 @@ Implemented in:
 │   │   ├── routes/
 │   │   ├── services/
 │   │   └── tools/
-│   ├── artifacts/
 │   ├── data/
 │   ├── scripts/
 │   ├── Dockerfile
@@ -393,13 +389,26 @@ Required:
 - `ALPHA_VANTAGE_API_KEY`
 - `SEC_USER_AGENT`
 
+Optional:
+
+- `DATABASE_URL`
+  - Leave unset for local SQLite fallback.
+- `FRED_API_KEY`
+- `BEA_API_KEY`
+- `BLS_API_KEY`
+- `CENSUS_API_KEY`
+- `EIA_API_KEY`
+
 Recommended defaults can stay as-is:
 
+- `PORTFOLIO_APP_ENV=development`
 - `PORTFOLIO_BENCHMARK=SPY`
 - `PORTFOLIO_LOOKBACK_DAYS=252`
 - `PORTFOLIO_RISK_FREE_FALLBACK=0.02`
-- `PORTFOLIO_API_CORS_ORIGINS=http://localhost:5173`
-- `VITE_API_BASE_URL=http://localhost:8000`
+- `PORTFOLIO_API_CORS_ORIGINS=http://127.0.0.1:5173`
+- `VITE_API_BASE_URL=http://127.0.0.1:8000`
+
+If `DATABASE_URL` is unset, the backend uses SQLite at `backend/data/app.db`.
 
 ### 2. Build The Ticker Metadata File
 
@@ -440,6 +449,8 @@ Open [http://localhost:5173](http://localhost:5173).
 docker compose up --build
 ```
 
+`docker compose` also follows the same database rule: use Postgres when `DATABASE_URL` is set in `.env`, otherwise fall back to local SQLite.
+
 Frontend:
 
 - [http://localhost:5173](http://localhost:5173)
@@ -452,38 +463,45 @@ Backend:
 
 ### Render
 
-This repo includes `render.yaml`.
+This repo includes a production-ready `render.yaml` Blueprint that provisions:
 
-You still need to supply:
+- A Docker backend web service
+- A static frontend web service
+- A managed Render Postgres database
+
+The backend uses `DATABASE_URL` from the managed Postgres instance in Render. Local SQLite fallback remains available automatically when `DATABASE_URL` is unset in development.
+
+Required Render secrets:
 
 - `OPENAI_API_KEY`
 - `ALPHA_VANTAGE_API_KEY`
 - `SEC_USER_AGENT`
 
+Optional Render secrets for expanded data coverage:
+
+- `FRED_API_KEY`
+- `BEA_API_KEY`
+- `BLS_API_KEY`
+- `CENSUS_API_KEY`
+- `EIA_API_KEY`
+
 Steps:
 
 1. Create a new Render Blueprint from this repo.
-2. Set the missing secrets.
-3. Update `PORTFOLIO_API_CORS_ORIGINS` if the frontend URL differs.
-4. Deploy.
+2. Set the required secrets and any optional data-source keys you plan to use.
+3. Deploy.
+4. If you later add a custom frontend domain, update `PORTFOLIO_API_CORS_ORIGINS` to match it.
 
-### Other Hosts
+No persistent disk is required. Charts are rendered natively in the frontend, and session/cache data live in the configured database.
 
-- Backend can run anywhere that supports Docker or Python ASGI.
-- Frontend can run on Vercel, Netlify, Render Static, or any static host.
+## Session Persistence And Native Visualization
 
-## Artifact Generation Details
-
-Generated in `backend/app/services/artifacts.py`:
-
-- `cumulative_performance.png`
-- `sector_exposure.png`
-- `correlation_heatmap.png`
-- `scenario_comparison.png` when relevant
-- `analysis_response.json`
-- `final_memo.md`
-
-Artifacts are saved under `backend/artifacts/<session_id>/` and exposed by FastAPI static file serving.
+- `backend/app/services/artifacts.py`
+  - Persists analysis sessions and factor cross-section run metadata into the configured database.
+- `frontend/src/components/ResultsPanel.tsx`
+  - Renders performance and exposure charts directly from the API response.
+- `backend/app/database.py`
+  - Uses Render Postgres in production when `DATABASE_URL` is set and SQLite locally when it is not.
 
 ## Example User Questions
 
@@ -509,9 +527,9 @@ Artifacts are saved under `backend/artifacts/<session_id>/` and exposed by FastA
 | README | This document explicitly maps Collect -> EDA -> Hypothesize |
 | Code execution | Deterministic Python analytics and scenario simulation |
 | Structured output | Pydantic schemas in `backend/app/models/schemas.py` and agent `output_type`s |
-| Artifacts | `backend/app/services/artifacts.py` |
-| Data visualization | Generated PNG charts and frontend artifact display |
-| Additional grab-bag: SQLite retrieval layer | `backend/app/database.py`, `backend/app/services/cache.py` |
+| Session persistence | `backend/app/services/artifacts.py` |
+| Data visualization | Native charts in `frontend/src/components/ResultsPanel.tsx` plus correlation heatmap rendering |
+| Additional grab-bag: dual database support | `backend/app/database.py`, `backend/app/services/cache.py` |
 | Additional grab-bag: parallel specialist execution | `asyncio.gather()` for overlay agents in `backend/app/services/orchestration.py` |
 
 ## File / Function / Class Mapping For Key Rubric Items
@@ -527,7 +545,7 @@ Artifacts are saved under `backend/artifacts/<session_id>/` and exposed by FastA
 | Tool-calling layer | `backend/app/tools/agent_tools.py` |
 | Planner agent | `backend/app/agents/runtime.py`, `AgentRuntime.planner` |
 | Writer / critic loop | `backend/app/services/orchestration.py`, `analyze()` |
-| Artifact generation | `backend/app/services/artifacts.py` |
+| Session persistence | `backend/app/services/artifacts.py` |
 | Ticker metadata generation | `backend/scripts/build_ticker_metadata.py` |
 
 ## Known Limitations
@@ -557,4 +575,3 @@ Artifacts are saved under `backend/artifacts/<session_id>/` and exposed by FastA
 - If a what-if addition is asked in natural language but no hypothetical form is filled, the app tests a default 5% target-weight addition for the mentioned ticker.
 - A fallback risk-free rate of 2% is acceptable when treasury series retrieval fails.
 - Candidate search uses a curated liquid U.S. equity universe rather than the full market, by design.
-

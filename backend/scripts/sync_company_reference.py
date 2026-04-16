@@ -10,15 +10,18 @@ from app.database import Database
 
 
 def parse_args() -> argparse.Namespace:
+    settings = get_settings()
     parser = argparse.ArgumentParser(description="Sync local company reference metadata into dim_company.")
-    parser.add_argument("--db-path", type=Path, default=get_settings().sqlite_path)
-    parser.add_argument("--input-path", type=Path, default=get_settings().ticker_metadata_path)
+    parser.add_argument("--db-path", type=Path, default=None)
+    parser.add_argument("--database-url", default=settings.database_url)
+    parser.add_argument("--input-path", type=Path, default=settings.ticker_metadata_path)
     return parser.parse_args()
 
 
 def main() -> None:
     args = parse_args()
-    database = Database(args.db_path)
+    settings = get_settings()
+    database = Database(args.database_url or args.db_path or settings.sqlite_path)
     database.initialize()
     payload = json.loads(args.input_path.read_text(encoding="utf-8"))
     updated_at = datetime.now(UTC).isoformat()
@@ -47,7 +50,7 @@ def main() -> None:
                 ),
             )
             inserted += 1
-    print(f"Synced {inserted} company reference rows into {args.db_path}")
+    print(f"Synced {inserted} company reference rows into {database.display_target}")
 
 
 if __name__ == "__main__":

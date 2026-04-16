@@ -414,9 +414,13 @@ async def shortlist_candidate_universe(
     excluded_sectors: list[str] | None = None,
     max_candidates: int = 20,
 ) -> str:
-    result = context.context.scenario_service.shortlist_universe(
+    result = await context.context.scenario_service.shortlist_universe(
         baseline_bundle=context.context.baseline_bundle,
         objective=context.context.plan.objective,
+        optimization_preferences=context.context.plan.optimization_preferences,
+        lookback_days=context.context.lookback_days,
+        start_date=context.context.start_date,
+        end_date=context.context.end_date,
         preferred_sectors=preferred_sectors,
         excluded_sectors=excluded_sectors,
         max_candidates=max_candidates,
@@ -433,6 +437,7 @@ async def rank_candidate_positions(
         baseline_bundle=context.context.baseline_bundle,
         benchmark_symbol=context.context.benchmark_symbol,
         objective=context.context.plan.objective,
+        optimization_preferences=context.context.plan.optimization_preferences,
         lookback_days=context.context.lookback_days,
         start_date=context.context.start_date,
         end_date=context.context.end_date,

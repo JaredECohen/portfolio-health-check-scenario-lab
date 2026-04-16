@@ -83,19 +83,25 @@ class AlphaVantageService:
             },
         )
         time_series = payload.get("Time Series (Daily)", {})
-        rows = []
-        for date_str, values in time_series.items():
-            rows.append(
-                {
-                    "date": pd.to_datetime(date_str),
-                    "adjusted_close": float(values["5. adjusted close"]),
-                    "close": float(values["4. close"]),
-                    "volume": float(values["6. volume"]),
+        if not time_series:
+            raise AlphaVantageError(f"No daily price history returned for {symbol}.")
+        frame = (
+            pd.DataFrame.from_dict(time_series, orient="index")
+            .rename(
+                columns={
+                    "5. adjusted close": "adjusted_close",
+                    "4. close": "close",
+                    "6. volume": "volume",
                 }
             )
-        if not rows:
-            raise AlphaVantageError(f"No daily price history returned for {symbol}.")
-        frame = pd.DataFrame(rows).sort_values("date").set_index("date")
+            .loc[:, ["adjusted_close", "close", "volume"]]
+        )
+        frame.index = pd.to_datetime(frame.index, format="%Y-%m-%d", errors="coerce")
+        frame = frame[frame.index.notna()]
+        if frame.empty:
+            raise AlphaVantageError(f"No parseable daily price history returned for {symbol}.")
+        frame = frame.astype(float).sort_index()
+        frame.index.name = "date"
         return frame
 
     async def get_company_overview(self, symbol: str) -> dict[str, Any]:
@@ -183,14 +189,16 @@ class AlphaVantageService:
 
     @staticmethod
     def _frame_from_payload(payload: dict[str, Any]) -> pd.DataFrame:
-        rows = [
-            {"date": pd.to_datetime(item["date"]), "value": float(item["value"])}
-            for item in payload.get("data", [])
-            if item.get("value") not in (None, ".")
-        ]
-        if not rows:
+        frame = pd.DataFrame(payload.get("data", []))
+        if frame.empty or "date" not in frame.columns or "value" not in frame.columns:
             return pd.DataFrame(columns=["value"], index=pd.DatetimeIndex([], name="date"))
-        return pd.DataFrame(rows).sort_values("date").set_index("date")
+        frame = frame.loc[frame["value"].notna() & (frame["value"] != "."), ["date", "value"]].copy()
+        frame["date"] = pd.to_datetime(frame["date"], format="%Y-%m-%d", errors="coerce")
+        frame["value"] = pd.to_numeric(frame["value"], errors="coerce")
+        frame = frame.dropna(subset=["date", "value"])
+        if frame.empty:
+            return pd.DataFrame(columns=["value"], index=pd.DatetimeIndex([], name="date"))
+        return frame.sort_values("date").set_index("date")
 
     async def get_latest_earnings_transcript(self, symbol: str) -> dict[str, Any] | None:
         metadata = await self.get_quarterly_earnings_metadata(symbol)

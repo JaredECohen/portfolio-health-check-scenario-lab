@@ -38,6 +38,10 @@ class SecBulkLoadResult:
     companies: int = 0
     fundamentals: int = 0
     filings: int = 0
+    requested_companies: int = 0
+    requested_unique_ciks: int = 0
+    failed_companies: int = 0
+    next_offset: int | None = None
 
 
 class SecBulkIngestionService:
@@ -96,27 +100,56 @@ class SecBulkIngestionService:
         self._start_run(run_id=run_id, source=source, started_at=started_at)
         try:
             seed_rows = self._dim_company_seed_rows(limit=max_companies, offset=offset, only_missing=only_missing)
+            requested_companies = len(seed_rows)
+            next_offset = 0 if only_missing else offset + requested_companies
+            cik_to_tickers: dict[str, list[str]] = {}
+            for seed in seed_rows:
+                cik = self._normalize_cik(seed["cik"])
+                cik_to_tickers.setdefault(cik, []).append(str(seed["ticker"]).upper())
             companyfacts: dict[str, dict[str, Any]] = {}
             submissions: dict[str, dict[str, Any]] = {}
             failures: list[dict[str, str]] = []
-            for seed in seed_rows:
-                cik = self._normalize_cik(seed["cik"])
-                try:
-                    companyfacts[f"CIK{cik}"] = self._request_json(
-                        f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json"
-                    )
-                    submissions[f"CIK{cik}"] = self._request_json(
-                        f"https://data.sec.gov/submissions/CIK{cik}.json"
-                    )
-                except Exception as exc:  # noqa: BLE001
-                    failures.append(
-                        {
-                            "ticker": str(seed["ticker"]),
-                            "cik": cik,
-                            "error": str(exc),
-                        }
-                    )
+            known_missing_ciks = self.known_missing_ciks(source=source)
+            with httpx.Client(
+                headers={"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"},
+                timeout=60.0,
+            ) as client:
+                for cik, tickers in cik_to_tickers.items():
+                    if cik in known_missing_ciks:
+                        failures.append(
+                            {
+                                "ticker": tickers[0],
+                                "cik": cik,
+                                "tickers": ", ".join(tickers),
+                                "error": "Cached 404 for SEC companyfacts/submissions payload.",
+                            }
+                        )
+                        continue
+                    try:
+                        companyfacts[f"CIK{cik}"] = self._request_json(
+                            f"https://data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json",
+                            client=client,
+                        )
+                        submissions[f"CIK{cik}"] = self._request_json(
+                            f"https://data.sec.gov/submissions/CIK{cik}.json",
+                            client=client,
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        failures.append(
+                            {
+                                "ticker": tickers[0],
+                                "cik": cik,
+                                "tickers": ", ".join(tickers),
+                                "error": str(exc),
+                            }
+                        )
             result = self._load_payloads(companyfacts=companyfacts, submissions=submissions, metrics=metrics)
+            result.requested_companies = requested_companies
+            result.requested_unique_ciks = len(cik_to_tickers)
+            result.failed_companies = sum(
+                len(cik_to_tickers[item["cik"]]) for item in failures if item["cik"] in cik_to_tickers
+            )
+            result.next_offset = next_offset
             self._finish_run(
                 run_id=run_id,
                 status="success" if not failures else "partial_success",
@@ -124,7 +157,11 @@ class SecBulkIngestionService:
                 watermark=datetime.now(UTC).date().isoformat(),
                 details={
                     "offset": offset,
-                    "requested_companies": len(seed_rows),
+                    "requested_companies": requested_companies,
+                    "requested_unique_ciks": len(cik_to_tickers),
+                    "failed_companies": result.failed_companies,
+                    "next_offset": next_offset,
+                    "only_missing": only_missing,
                     "companies": result.companies,
                     "fundamentals": result.fundamentals,
                     "filings": result.filings,
@@ -200,6 +237,7 @@ class SecBulkIngestionService:
         result = SecBulkLoadResult()
         with self.database.connect() as connection:
             for cik, facts_payload in companyfacts.items():
+                normalized_cik = self._normalize_cik(cik)
                 ticker = self._resolve_primary_ticker(facts_payload, submissions.get(cik))
                 company_name = facts_payload.get("entityName") or (submissions.get(cik) or {}).get("name")
                 if not ticker or not company_name:
@@ -215,24 +253,25 @@ class SecBulkIngestionService:
                       company_name = excluded.company_name,
                       updated_at = excluded.updated_at
                     """,
-                    (ticker, cik, company_name, ticker, ticker, ticker, updated_at),
+                    (ticker, normalized_cik, company_name, ticker, ticker, ticker, updated_at),
                 )
                 result.companies += 1
                 result.fundamentals += self._insert_company_facts(
                     connection=connection,
-                    cik=cik,
+                    cik=normalized_cik,
                     ticker=ticker,
                     payload=facts_payload,
                     metrics=metrics,
                 )
 
             for cik, payload in submissions.items():
+                normalized_cik = self._normalize_cik(cik)
                 ticker = self._resolve_primary_ticker(companyfacts.get(cik), payload)
                 if not ticker:
                     continue
                 result.filings += self._insert_submissions(
                     connection=connection,
-                    cik=cik,
+                    cik=normalized_cik,
                     ticker=ticker,
                     payload=payload,
                 )
@@ -244,11 +283,132 @@ class SecBulkIngestionService:
         response.raise_for_status()
         return response.content
 
-    def _request_json(self, url: str) -> dict[str, Any]:
-        headers = {"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"}
-        response = httpx.get(url, headers=headers, timeout=60.0)
+    def _request_json(self, url: str, *, client: httpx.Client | None = None) -> dict[str, Any]:
+        if client is not None:
+            response = client.get(url)
+        else:
+            headers = {"User-Agent": self.user_agent, "Accept-Encoding": "gzip, deflate"}
+            response = httpx.get(url, headers=headers, timeout=60.0)
         response.raise_for_status()
         return dict(response.json())
+
+    def dim_company_seed_count(self, *, only_missing: bool = False) -> int:
+        missing_filter = ""
+        if only_missing:
+            missing_filter = """
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM fact_company_fundamentals fundamentals
+                    WHERE fundamentals.ticker = dim_company.ticker
+                )
+            """
+        with self.database.connect() as connection:
+            row = connection.execute(
+                f"""
+                SELECT COUNT(*) AS row_count
+                FROM dim_company
+                WHERE cik IS NOT NULL AND cik != ''
+                {missing_filter}
+                """
+            ).fetchone()
+        return int(row["row_count"]) if row is not None else 0
+
+    def cleanup_stale_runs(self, *, sources: list[str], reason: str) -> int:
+        if not sources:
+            return 0
+        placeholders = ", ".join("?" for _ in sources)
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT run_id, details_json
+                FROM ingestion_runs
+                WHERE status = 'running' AND source IN ({placeholders})
+                """,
+                tuple(sources),
+            ).fetchall()
+            for row in rows:
+                details = json.loads(row["details_json"]) if row["details_json"] else {}
+                details.update(
+                    {
+                        "cleanup_reason": reason,
+                        "cleanup_timestamp": datetime.now(UTC).isoformat(),
+                    }
+                )
+                connection.execute(
+                    """
+                    UPDATE ingestion_runs
+                    SET completed_at = ?, status = ?, details_json = ?
+                    WHERE run_id = ?
+                    """,
+                    (
+                        datetime.now(UTC).isoformat(),
+                        "failed",
+                        json.dumps(details),
+                        row["run_id"],
+                    ),
+                )
+        return len(rows)
+
+    def known_missing_ciks(self, *, source: str | None = None) -> set[str]:
+        filters = ["details_json IS NOT NULL"]
+        params: list[Any] = []
+        if source:
+            filters.append("source = ?")
+            params.append(source)
+        where_clause = " AND ".join(filters)
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                f"""
+                SELECT details_json
+                FROM ingestion_runs
+                WHERE {where_clause}
+                """,
+                tuple(params),
+            ).fetchall()
+        missing: set[str] = set()
+        for row in rows:
+            details = json.loads(row["details_json"]) if row["details_json"] else {}
+            for failure in details.get("failures", []):
+                error = str(failure.get("error") or "")
+                if "404" not in error:
+                    continue
+                cik = self._normalize_cik(failure.get("cik"))
+                if cik:
+                    missing.add(cik)
+        return missing
+
+    def resume_offset_for_refresh(self, *, source: str, fallback_offset: int = 0) -> int:
+        with self.database.connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT details_json
+                FROM ingestion_runs
+                WHERE source = ? AND status != 'running'
+                ORDER BY started_at DESC
+                """,
+                (source,),
+            ).fetchall()
+        for row in rows:
+            if not row["details_json"]:
+                continue
+            details = json.loads(row["details_json"])
+            next_offset = self._coerce_int(details.get("next_offset"))
+            if next_offset is not None:
+                return max(fallback_offset, next_offset)
+            offset = self._coerce_int(details.get("offset"))
+            requested = self._coerce_int(details.get("requested_companies")) or 0
+            if offset is not None:
+                return max(fallback_offset, offset + requested)
+        return fallback_offset
+
+    @staticmethod
+    def _coerce_int(value: Any) -> int | None:
+        if value in (None, ""):
+            return None
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return None
 
     @staticmethod
     def _normalize_cik(value: Any) -> str:

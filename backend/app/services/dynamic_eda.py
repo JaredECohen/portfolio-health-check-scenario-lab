@@ -7,6 +7,12 @@ from typing import Any
 import numpy as np
 import pandas as pd
 
+from app.services.factor_analytics import (
+    attribution_rows_from_profile,
+    estimate_factor_profile,
+    exposure_columns_from_profile,
+    top_factor_summary,
+)
 from app.models.schemas import (
     AnalysisPlan,
     AnalysisTable,
@@ -174,6 +180,38 @@ DATASET_CATALOG: dict[str, dict[str, Any]] = {
         "url": "https://www.eia.gov/opendata/",
         "requires_api_key": False,
     },
+    "KEN_FRENCH_FF5_DAILY": {
+        "source": "Kenneth French Data Library",
+        "series": "KEN_FRENCH_FF5_DAILY",
+        "category": "factor",
+        "description": "U.S. Fama-French 5-factor daily returns (Mkt-RF, SMB, HML, RMW, CMA, RF).",
+        "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library.html",
+        "requires_api_key": False,
+    },
+    "KEN_FRENCH_FF5_MONTHLY": {
+        "source": "Kenneth French Data Library",
+        "series": "KEN_FRENCH_FF5_MONTHLY",
+        "category": "factor",
+        "description": "U.S. Fama-French 5-factor monthly returns (Mkt-RF, SMB, HML, RMW, CMA, RF).",
+        "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library.html",
+        "requires_api_key": False,
+    },
+    "KEN_FRENCH_MOMENTUM_DAILY": {
+        "source": "Kenneth French Data Library",
+        "series": "KEN_FRENCH_MOMENTUM_DAILY",
+        "category": "factor",
+        "description": "U.S. momentum factor daily returns.",
+        "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library.html",
+        "requires_api_key": False,
+    },
+    "KEN_FRENCH_MOMENTUM_MONTHLY": {
+        "source": "Kenneth French Data Library",
+        "series": "KEN_FRENCH_MOMENTUM_MONTHLY",
+        "category": "factor",
+        "description": "U.S. momentum factor monthly returns.",
+        "url": "https://mba.tuck.dartmouth.edu/pages/faculty/ken.french/Data_Library.html",
+        "requires_api_key": False,
+    },
 }
 
 TOPIC_SERIES_MAP: dict[str, list[str]] = {
@@ -187,6 +225,7 @@ TOPIC_SERIES_MAP: dict[str, list[str]] = {
     "labor": ["UNEMPLOYMENT"],
     "fundamental": ["SEC_FILINGS", "EARNINGS_TRANSCRIPTS"],
     "news": ["ALPHA_VANTAGE_NEWS_SENTIMENT", "GDELT_DOC_2"],
+    "factors": ["KEN_FRENCH_FF5_DAILY", "KEN_FRENCH_MOMENTUM_DAILY"],
 }
 
 
@@ -270,7 +309,14 @@ class DynamicEDAService:
             if not normalized_theme:
                 continue
             theme_expansions.extend(TOPIC_SERIES_MAP.get(normalized_theme, []))
-        unique_series = list(dict.fromkeys([*preferred, *theme_expansions]))
+        factor_expansions: list[str] = []
+        if plan.question_type in {
+            QuestionType.performance_drivers,
+            QuestionType.factor_cross_section,
+            QuestionType.what_if_addition,
+        } or plan.candidate_search_needed:
+            factor_expansions.extend(TOPIC_SERIES_MAP["factors"])
+        unique_series = list(dict.fromkeys([*preferred, *theme_expansions, *factor_expansions]))
         references: list[DataSourceReference] = []
         for series in unique_series:
             metadata = DATASET_CATALOG.get(series)
@@ -313,6 +359,8 @@ class DynamicEDAService:
             token in lowered for token in ("company", "earnings", "filing", "add", "addition")
         ):
             return "Used to ground company-specific what-if or risk questions in primary source disclosures."
+        if series.startswith("KEN_FRENCH_"):
+            return "Used to estimate local factor exposures and relate returns to market, size, value/growth, profitability, investment, and momentum."
         return None
 
     async def analyze_rates_regimes(
@@ -726,6 +774,9 @@ class DynamicEDAService:
                 rows=[item.model_dump() for item in contributors[:8]],
             )
         ]
+        factor_findings, factor_tables = self._performance_factor_package(baseline_bundle)
+        findings.extend(factor_findings)
+        tables.extend(factor_tables)
         tables.extend(self._fundamental_feature_tables([item.ticker for item in contributors[:2]]))
         if news_intel and news_intel.articles:
             findings.append(
@@ -750,6 +801,139 @@ class DynamicEDAService:
             news_intel=news_intel,
             tables=tables,
         )
+
+    def _performance_factor_package(
+        self,
+        baseline_bundle: AnalyticsBundle,
+    ) -> tuple[list[EDAFinding], list[AnalysisTable]]:
+        factor_frame = self._factor_frame_for_baseline(baseline_bundle)
+        if factor_frame.empty:
+            return [], []
+        portfolio_profile = estimate_factor_profile(baseline_bundle.portfolio_returns, factor_frame)
+        if portfolio_profile is None:
+            return [], []
+        attribution_rows = attribution_rows_from_profile(portfolio_profile)
+        holding_rows = self._holding_factor_exposure_rows(
+            baseline_bundle=baseline_bundle,
+            factor_frame=factor_frame,
+        )
+        top_factor_label, top_factor_return = top_factor_summary(portfolio_profile)
+        findings: list[EDAFinding] = []
+        if top_factor_label is not None and top_factor_return is not None:
+            evidence = [
+                f"Strongest attributed factor was {top_factor_label} at {top_factor_return * 100:.2f} percentage points of excess return over the aligned sample.",
+                f"Momentum beta was {exposure_columns_from_profile(portfolio_profile).get('factor_momentum_beta', 0.0):.2f} and growth tilt beta was {exposure_columns_from_profile(portfolio_profile).get('factor_growth_tilt_beta', 0.0):.2f}.",
+                f"The local factor regression used {portfolio_profile['observations']} daily observations with R-squared {portfolio_profile['r_squared']:.2f}.",
+            ]
+            findings.append(
+                EDAFinding(
+                    headline="Local factor regression decomposes performance into market, style, quality, investment, and momentum exposures.",
+                    evidence=evidence,
+                    metrics={
+                        "top_factor_attributed_excess_return": top_factor_return,
+                        "factor_r_squared": float(portfolio_profile["r_squared"]),
+                        "factor_observations": float(portfolio_profile["observations"]),
+                    },
+                )
+            )
+        if holding_rows:
+            dominant_holding = holding_rows[0]
+            findings.append(
+                EDAFinding(
+                    headline="Holding-level factor betas show whether the main contributors share the same style exposures or offset each other.",
+                    evidence=[
+                        f"{dominant_holding['ticker']} had primary exposure to {dominant_holding['factor_primary_exposure']} with momentum beta {dominant_holding['factor_momentum_beta']:.2f}.",
+                        f"Growth tilt beta for that holding was {dominant_holding['factor_growth_tilt_beta']:.2f}.",
+                        "This helps separate stock-specific winners from broader factor-driven performance.",
+                    ],
+                    metrics={
+                        "top_holding_factor_r_squared": float(dominant_holding["factor_r_squared"]),
+                    },
+                )
+            )
+        tables = [
+            AnalysisTable(
+                name="Portfolio Factor Attribution",
+                columns=[
+                    "factor",
+                    "factor_label",
+                    "beta",
+                    "attributed_excess_return",
+                    "share_of_total_excess_return",
+                    "signal",
+                ],
+                rows=attribution_rows,
+            ),
+        ]
+        if holding_rows:
+            tables.append(
+                AnalysisTable(
+                    name="Holding Factor Exposures",
+                    columns=[
+                        "ticker",
+                        "company_name",
+                        "contribution_pct",
+                        "weight",
+                        "factor_market_beta",
+                        "factor_size_beta",
+                        "factor_value_beta",
+                        "factor_growth_tilt_beta",
+                        "factor_profitability_beta",
+                        "factor_investment_beta",
+                        "factor_momentum_beta",
+                        "factor_r_squared",
+                        "factor_primary_exposure",
+                    ],
+                    rows=holding_rows,
+                )
+            )
+        return findings, tables
+
+    def _factor_frame_for_baseline(self, baseline_bundle: AnalyticsBundle) -> pd.DataFrame:
+        if self.feature_store is None:
+            return pd.DataFrame()
+        return self.feature_store.factor_model_frame(
+            frequency="daily",
+            start_date=pd.Timestamp(baseline_bundle.baseline.effective_start_date).date(),
+            end_date=pd.Timestamp(baseline_bundle.baseline.effective_end_date).date(),
+        )
+
+    def _holding_factor_exposure_rows(
+        self,
+        *,
+        baseline_bundle: AnalyticsBundle,
+        factor_frame: pd.DataFrame,
+    ) -> list[dict[str, Any]]:
+        rows: list[dict[str, Any]] = []
+        company_lookup = {
+            item.ticker: item.company_name
+            for item in baseline_bundle.baseline.positions
+        }
+        contributor_lookup = {
+            item.ticker: item
+            for item in baseline_bundle.baseline.contributors
+        }
+        for ticker in [item.ticker for item in baseline_bundle.baseline.contributors[:6]]:
+            if ticker not in baseline_bundle.holding_returns:
+                continue
+            profile = estimate_factor_profile(baseline_bundle.holding_returns[ticker], factor_frame)
+            if profile is None:
+                continue
+            exposure = exposure_columns_from_profile(profile)
+            contributor = contributor_lookup.get(ticker)
+            rows.append(
+                {
+                    "ticker": ticker,
+                    "company_name": company_lookup.get(ticker, ticker),
+                    "contribution_pct": (
+                        round(float(contributor.contribution_pct), 6) if contributor is not None else None
+                    ),
+                    "weight": round(float(contributor.weight), 6) if contributor is not None else None,
+                    **exposure,
+                }
+            )
+        rows.sort(key=lambda item: abs(float(item.get("contribution_pct") or 0.0)), reverse=True)
+        return rows
 
     async def _rates(
         self,
@@ -1232,6 +1416,15 @@ class DynamicEDAService:
                         "gross_margin",
                         "current_ratio",
                         "debt_to_revenue",
+                        "factor_market_beta",
+                        "factor_size_beta",
+                        "factor_value_beta",
+                        "factor_growth_tilt_beta",
+                        "factor_profitability_beta",
+                        "factor_investment_beta",
+                        "factor_momentum_beta",
+                        "factor_r_squared",
+                        "factor_primary_exposure",
                         "focus",
                     ],
                     rows=comparison_rows,
@@ -1304,6 +1497,12 @@ class DynamicEDAService:
             comparison_sector_filters=plan.comparison_sector_filters,
             comparison_ticker_limit=plan.comparison_ticker_limit,
             portfolio_tickers=[position.ticker for position in baseline_bundle.baseline.positions],
+            comparison_objective=plan.objective,
+            portfolio_sector_weights={
+                item.sector: item.weight
+                for item in baseline_bundle.baseline.sector_exposures
+                if item.sector
+            },
         )
 
     async def _what_if(
@@ -1919,7 +2118,16 @@ class DynamicEDAService:
 
     @staticmethod
     def _factor_metric_columns(frame: pd.DataFrame) -> list[str]:
-        excluded = {"trailing_return", "forward_21d_return", "return_21d", "return_63d", "effective_observations"}
+        excluded = {
+            "trailing_return",
+            "forward_21d_return",
+            "return_21d",
+            "return_63d",
+            "effective_observations",
+            "factor_alpha_total",
+            "factor_observations",
+            "factor_r_squared",
+        }
         numeric_columns = [
             column
             for column in frame.columns
@@ -2132,6 +2340,39 @@ class DynamicEDAService:
                     "debt_to_revenue": (
                         round(float(row["debt_to_revenue"]), 6) if pd.notna(row.get("debt_to_revenue")) else None
                     ),
+                    "factor_market_beta": (
+                        round(float(row["factor_market_beta"]), 6) if pd.notna(row.get("factor_market_beta")) else None
+                    ),
+                    "factor_size_beta": (
+                        round(float(row["factor_size_beta"]), 6) if pd.notna(row.get("factor_size_beta")) else None
+                    ),
+                    "factor_value_beta": (
+                        round(float(row["factor_value_beta"]), 6) if pd.notna(row.get("factor_value_beta")) else None
+                    ),
+                    "factor_growth_tilt_beta": (
+                        round(float(row["factor_growth_tilt_beta"]), 6)
+                        if pd.notna(row.get("factor_growth_tilt_beta"))
+                        else None
+                    ),
+                    "factor_profitability_beta": (
+                        round(float(row["factor_profitability_beta"]), 6)
+                        if pd.notna(row.get("factor_profitability_beta"))
+                        else None
+                    ),
+                    "factor_investment_beta": (
+                        round(float(row["factor_investment_beta"]), 6)
+                        if pd.notna(row.get("factor_investment_beta"))
+                        else None
+                    ),
+                    "factor_momentum_beta": (
+                        round(float(row["factor_momentum_beta"]), 6)
+                        if pd.notna(row.get("factor_momentum_beta"))
+                        else None
+                    ),
+                    "factor_r_squared": (
+                        round(float(row["factor_r_squared"]), 6) if pd.notna(row.get("factor_r_squared")) else None
+                    ),
+                    "factor_primary_exposure": row.get("factor_primary_exposure"),
                     "focus": row["ticker"] in focus_set,
                 }
             )

@@ -1,19 +1,26 @@
 from __future__ import annotations
 
+import httpx
 from agents import Agent, AgentOutputSchema, Runner
+from openai import APIConnectionError
 
 from app.agents.system_prompts import (
     CANDIDATE_SEARCH_PROMPT,
     CRITIC_PROMPT,
+    DEEP_RESEARCH_PROMPT,
     DYNAMIC_EDA_PROMPT,
     EARNINGS_OVERLAY_PROMPT,
     FILINGS_OVERLAY_PROMPT,
     MACRO_OVERLAY_PROMPT,
     PLANNER_PROMPT,
+    RESEARCH_DIRECTOR_PROMPT,
+    RESEARCH_SYNTHESIS_PROMPT,
     WRITER_PROMPT,
 )
 from app.models.schemas import (
     AnalysisPlan,
+    ResearchAgenda,
+    ResearchSynthesis,
     CandidateSearchResult,
     CriticResult,
     DynamicEDAResult,
@@ -34,9 +41,13 @@ from app.tools.agent_tools import (
 
 
 class AgentRuntime:
+    _api_unavailable = False
+
     def __init__(self) -> None:
         plan_output = AgentOutputSchema(AnalysisPlan, strict_json_schema=False)
         dynamic_eda_output = AgentOutputSchema(DynamicEDAResult, strict_json_schema=False)
+        research_agenda_output = AgentOutputSchema(ResearchAgenda, strict_json_schema=False)
+        research_synthesis_output = AgentOutputSchema(ResearchSynthesis, strict_json_schema=False)
         macro_output = AgentOutputSchema(MacroOverlayResult, strict_json_schema=False)
         earnings_output = AgentOutputSchema(EarningsOverlayResult, strict_json_schema=False)
         filings_output = AgentOutputSchema(FilingsOverlayResult, strict_json_schema=False)
@@ -54,6 +65,24 @@ class AgentRuntime:
             model="gpt-5.4-mini",
             instructions=DYNAMIC_EDA_PROMPT,
             tools=[run_dynamic_eda],
+            output_type=dynamic_eda_output,
+        )
+        self.research_director = Agent(
+            name="research_director",
+            model="gpt-5.4-mini",
+            instructions=RESEARCH_DIRECTOR_PROMPT,
+            output_type=research_agenda_output,
+        )
+        self.research_synthesis = Agent(
+            name="research_synthesis",
+            model="gpt-5.4-mini",
+            instructions=RESEARCH_SYNTHESIS_PROMPT,
+            output_type=research_synthesis_output,
+        )
+        self.deep_research = Agent(
+            name="deep_research",
+            model="gpt-5.4",
+            instructions=DEEP_RESEARCH_PROMPT,
             output_type=dynamic_eda_output,
         )
         self.macro_overlay = Agent(
@@ -97,34 +126,48 @@ class AgentRuntime:
             output_type=critic_output,
         )
 
+    async def _run_agent(self, agent: Agent, prompt: str, *, context: object | None = None):
+        if self.__class__._api_unavailable:
+            raise RuntimeError("OpenAI agent runtime is unavailable in this process.")
+        try:
+            if context is None:
+                result = await Runner.run(agent, prompt)
+            else:
+                result = await Runner.run(agent, prompt, context=context)
+            return result.final_output
+        except (APIConnectionError, httpx.ConnectError, httpx.ConnectTimeout, httpx.ReadTimeout) as exc:
+            self.__class__._api_unavailable = True
+            raise RuntimeError("OpenAI agent runtime is unavailable in this process.") from exc
+
     async def run_planner(self, prompt: str) -> AnalysisPlan:
-        result = await Runner.run(self.planner, prompt)
-        return result.final_output
+        return await self._run_agent(self.planner, prompt)
 
     async def run_dynamic_eda(self, prompt: str, *, context: object) -> DynamicEDAResult:
-        result = await Runner.run(self.dynamic_eda, prompt, context=context)
-        return result.final_output
+        return await self._run_agent(self.dynamic_eda, prompt, context=context)
+
+    async def run_research_director(self, prompt: str) -> ResearchAgenda:
+        return await self._run_agent(self.research_director, prompt)
+
+    async def run_research_synthesis(self, prompt: str) -> ResearchSynthesis:
+        return await self._run_agent(self.research_synthesis, prompt)
+
+    async def run_deep_research(self, prompt: str) -> DynamicEDAResult:
+        return await self._run_agent(self.deep_research, prompt)
 
     async def run_macro_overlay(self, prompt: str, *, context: object) -> MacroOverlayResult:
-        result = await Runner.run(self.macro_overlay, prompt, context=context)
-        return result.final_output
+        return await self._run_agent(self.macro_overlay, prompt, context=context)
 
     async def run_earnings_overlay(self, prompt: str, *, context: object) -> EarningsOverlayResult:
-        result = await Runner.run(self.earnings_overlay, prompt, context=context)
-        return result.final_output
+        return await self._run_agent(self.earnings_overlay, prompt, context=context)
 
     async def run_filings_overlay(self, prompt: str, *, context: object) -> FilingsOverlayResult:
-        result = await Runner.run(self.filings_overlay, prompt, context=context)
-        return result.final_output
+        return await self._run_agent(self.filings_overlay, prompt, context=context)
 
     async def run_candidate_search(self, prompt: str, *, context: object) -> CandidateSearchResult:
-        result = await Runner.run(self.candidate_search, prompt, context=context)
-        return result.final_output
+        return await self._run_agent(self.candidate_search, prompt, context=context)
 
     async def run_writer(self, prompt: str) -> FinalMemo:
-        result = await Runner.run(self.writer, prompt)
-        return result.final_output
+        return await self._run_agent(self.writer, prompt)
 
     async def run_critic(self, prompt: str) -> CriticResult:
-        result = await Runner.run(self.critic, prompt)
-        return result.final_output
+        return await self._run_agent(self.critic, prompt)

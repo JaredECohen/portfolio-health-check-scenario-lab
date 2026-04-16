@@ -9,7 +9,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from app.agents.runtime import AgentRuntime
 from app.config import Settings, get_settings
 from app.database import Database
-from app.models.schemas import AnalysisResponse, PortfolioInput, TickerMetadata
+from app.models.schemas import AnalysisResponse, PortfolioInput, TickerMetadata, TickerQuote
 from app.services.analytics import AnalyticsService
 from app.services.alpha_vantage import AlphaVantageError, AlphaVantageService
 from app.services.artifacts import ArtifactService
@@ -33,7 +33,7 @@ logger = logging.getLogger(__name__)
 @lru_cache(maxsize=1)
 def get_database() -> Database:
     settings = get_settings()
-    database = Database(settings.sqlite_path)
+    database = Database(settings.database_target)
     database.initialize()
     return database
 
@@ -93,9 +93,10 @@ def get_orchestrator(settings: Settings = Depends(get_settings)) -> PortfolioAna
             alpha_vantage=alpha_vantage,
             ticker_metadata=ticker_metadata,
             candidate_universe_path=settings.candidate_universe_path,
+            feature_store=feature_store,
         ),
         sec_edgar_service=sec_edgar_service,
-        artifact_service=ArtifactService(get_database(), settings.artifacts_dir),
+        artifact_service=ArtifactService(get_database()),
         agent_runtime=AgentRuntime(),
         risk_free_fallback=settings.risk_free_fallback,
     )
@@ -131,6 +132,25 @@ async def get_ticker(ticker: str) -> TickerMetadata:
     sector = overview.get("Sector") or result.sector
     exchange = overview.get("Exchange") or result.exchange
     return result.model_copy(update={"sector": sector, "exchange": exchange})
+
+
+@router.get("/tickers/{ticker}/quote", response_model=TickerQuote)
+async def get_ticker_quote(ticker: str) -> TickerQuote:
+    service = get_ticker_metadata_service()
+    result = service.get(ticker)
+    if result is None:
+        raise HTTPException(status_code=404, detail="Ticker not found")
+    alpha_vantage = get_alpha_vantage_service()
+    try:
+        history = await alpha_vantage.get_daily_adjusted(result.ticker)
+    except AlphaVantageError as exc:
+        raise HTTPException(status_code=503, detail="Unable to load latest price.") from exc
+    latest_row = history.iloc[-1]
+    return TickerQuote(
+        ticker=result.ticker,
+        price=float(latest_row["adjusted_close"]),
+        as_of=history.index[-1].date(),
+    )
 
 
 @router.post("/analyze", response_model=AnalysisResponse)

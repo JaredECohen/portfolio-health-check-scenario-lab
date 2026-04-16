@@ -16,6 +16,7 @@ dependencies = [
   "matplotlib>=3.9.2",
   "python-multipart>=0.0.12",
   "openai-agents>=0.0.15",
+  "psycopg[binary]>=3.2.3",
 ]
 
 [project.optional-dependencies]
@@ -33,4 +34,3 @@ include = ["app*"]
 
 [tool.ruff]
 line-length = 100
-

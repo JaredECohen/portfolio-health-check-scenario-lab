@@ -1,12 +1,15 @@
 from __future__ import annotations
 
+from collections import Counter
 from datetime import date
 from typing import Any
 
 import numpy as np
 import pandas as pd
 
+from app.services.factor_analytics import estimate_factor_profile, exposure_columns_from_profile
 from app.services.alpha_vantage import AlphaVantageService
+from app.services.candidate_universe import shortlist_candidate_universe_rows
 from app.services.feature_store import FeatureStore
 from app.services.sec_edgar import SecEdgarService
 from app.services.ticker_metadata import TickerMetadataService
@@ -52,6 +55,9 @@ class StockDatasetBuilder:
         comparison_sector_filters: list[str] | None = None,
         comparison_ticker_limit: int | None = None,
         portfolio_tickers: list[str] | None = None,
+        portfolio_returns: pd.Series | None = None,
+        comparison_objective: str = "performance",
+        portfolio_sector_weights: dict[str, float] | None = None,
     ) -> pd.DataFrame:
         unique_tickers = self._resolve_universe(
             tickers=tickers,
@@ -59,6 +65,8 @@ class StockDatasetBuilder:
             comparison_sector_filters=comparison_sector_filters or [],
             comparison_ticker_limit=comparison_ticker_limit,
             portfolio_tickers=portfolio_tickers or [],
+            comparison_objective=comparison_objective,
+            portfolio_sector_weights=portfolio_sector_weights or {},
         )
         if not unique_tickers:
             return pd.DataFrame()
@@ -68,6 +76,11 @@ class StockDatasetBuilder:
             lookback_days=lookback_days,
             start_date=start_date,
             end_date=end_date,
+        )
+        factor_frame = self._factor_frame(
+            start_date=start_date,
+            end_date=end_date,
+            lookback_days=lookback_days,
         )
         rows: list[dict[str, Any]] = []
         for ticker in unique_tickers:
@@ -97,18 +110,32 @@ class StockDatasetBuilder:
             benchmark_returns = aligned["benchmark"].pct_change().dropna()
             aligned_returns = pd.concat([returns, benchmark_returns], axis=1).dropna()
             aligned_returns.columns = ["stock", "benchmark"]
+            aligned_portfolio_returns = (
+                pd.concat(
+                    [
+                        returns.rename("stock"),
+                        portfolio_returns.rename("portfolio"),
+                    ],
+                    axis=1,
+                ).dropna()
+                if portfolio_returns is not None
+                else pd.DataFrame()
+            )
             forward_21d_panel = self._rolling_forward_returns(aligned["price"], 21)
             forward_63d_panel = self._rolling_forward_returns(aligned["price"], 63)
             fundamentals = await self._fundamentals_for_ticker(
                 ticker=ticker,
                 cik=metadata.get("cik"),
             )
+            trailing_return = float(aligned["price"].iloc[-1] / aligned["price"].iloc[0] - 1)
+            benchmark_return = float(aligned["benchmark"].iloc[-1] / aligned["benchmark"].iloc[0] - 1)
             row = {
                 "ticker": ticker,
                 "sector": metadata.get("sector") or "Unknown",
                 "company_name": metadata.get("company_name") or ticker,
                 "effective_observations": int(len(aligned)),
-                "trailing_return": float(aligned["price"].iloc[-1] / aligned["price"].iloc[0] - 1),
+                "trailing_return": trailing_return,
+                "return_vs_benchmark": trailing_return - benchmark_return,
                 "return_63d": self._window_return(aligned["price"], 63),
                 "return_21d": self._window_return(aligned["price"], 21),
                 "forward_21d_return": self._panel_mean(forward_21d_panel),
@@ -118,8 +145,18 @@ class StockDatasetBuilder:
                 "annualized_volatility": float(returns.std() * np.sqrt(252)),
                 "beta_vs_benchmark": self._beta(aligned_returns),
                 "correlation_vs_benchmark": float(aligned_returns["stock"].corr(aligned_returns["benchmark"])),
+                "correlation_vs_portfolio": (
+                    float(aligned_portfolio_returns["stock"].corr(aligned_portfolio_returns["portfolio"]))
+                    if not aligned_portfolio_returns.empty
+                    else np.nan
+                ),
             }
             row.update(fundamentals)
+            row.update(
+                exposure_columns_from_profile(
+                    estimate_factor_profile(returns, factor_frame)
+                )
+            )
             rows.append(row)
         frame = pd.DataFrame(rows)
         if frame.empty:
@@ -149,6 +186,26 @@ class StockDatasetBuilder:
         metadata = self.ticker_metadata_service.get(ticker)
         return metadata.model_dump() if metadata is not None else {"ticker": ticker}
 
+    def _factor_frame(
+        self,
+        *,
+        start_date: date | None,
+        end_date: date | None,
+        lookback_days: int,
+    ) -> pd.DataFrame:
+        if self.feature_store is None:
+            return pd.DataFrame()
+        frame = self.feature_store.factor_model_frame(
+            frequency="daily",
+            start_date=start_date,
+            end_date=end_date,
+        )
+        if frame.empty:
+            return frame
+        if start_date is None and end_date is None:
+            return frame.tail(lookback_days)
+        return frame
+
     def _resolve_universe(
         self,
         *,
@@ -157,47 +214,136 @@ class StockDatasetBuilder:
         comparison_sector_filters: list[str],
         comparison_ticker_limit: int | None,
         portfolio_tickers: list[str],
+        comparison_objective: str,
+        portfolio_sector_weights: dict[str, float],
     ) -> list[str]:
         custom_tickers = [ticker.upper().strip() for ticker in dict.fromkeys(tickers) if ticker.strip()]
         portfolio = [ticker.upper().strip() for ticker in dict.fromkeys(portfolio_tickers) if ticker.strip()]
+        base_tickers = [ticker for ticker in dict.fromkeys([*custom_tickers, *portfolio]) if ticker]
         limit = comparison_ticker_limit or 25
         if comparison_universe == "custom_ticker_basket":
-            return custom_tickers or portfolio
+            return base_tickers[:limit]
         if comparison_universe == "portfolio_only" or self.ticker_metadata_service is None:
-            return custom_tickers or portfolio
+            return base_tickers[:limit]
 
         sector_filters = {sector.upper().strip() for sector in comparison_sector_filters if sector.strip()}
-        if not sector_filters:
-            sector_filters = {
-                metadata.sector.upper().strip()
-                for ticker in [*custom_tickers, *portfolio]
-                if (metadata := self.ticker_metadata_service.get(ticker)) and metadata.sector
-            }
         universe_rows = [
             item.model_dump()
             for item in self.ticker_metadata_service.all()
             if item.ticker and item.company_name
         ]
-        selected: list[str] = []
-        for row in universe_rows:
-            ticker = str(row.get("ticker", "")).upper().strip()
-            sector = str(row.get("sector") or "").upper().strip()
-            if not ticker:
+        capacity = max(limit - len(base_tickers), 0)
+        if capacity <= 0:
+            return base_tickers[:limit]
+
+        if comparison_universe == "sector_peers":
+            selected = self._sector_peer_tickers(
+                universe_rows=universe_rows,
+                base_tickers=base_tickers,
+                sector_filters=sector_filters,
+                limit=capacity,
+            )
+        elif comparison_universe == "candidate_universe_subset":
+            selected = self._candidate_subset_tickers(
+                universe_rows=universe_rows,
+                base_tickers=base_tickers,
+                sector_filters=sector_filters,
+                objective=comparison_objective,
+                portfolio_sector_weights=portfolio_sector_weights or self._derived_sector_weights(base_tickers),
+                limit=capacity,
+            )
+        else:
+            selected = []
+        combined = [ticker for ticker in dict.fromkeys([*base_tickers, *selected]) if ticker]
+        return combined[:limit]
+
+    def _sector_peer_tickers(
+        self,
+        *,
+        universe_rows: list[dict[str, Any]],
+        base_tickers: list[str],
+        sector_filters: set[str],
+        limit: int,
+    ) -> list[str]:
+        if limit <= 0:
+            return []
+        anchor_sectors: Counter[str] = Counter()
+        anchor_exchanges: dict[str, set[str]] = {}
+        for ticker in base_tickers:
+            metadata = self.ticker_metadata_service.get(ticker) if self.ticker_metadata_service is not None else None
+            if metadata is None or not metadata.sector:
                 continue
-            if comparison_universe == "sector_peers":
-                if sector_filters and sector not in sector_filters:
+            sector_key = metadata.sector.upper().strip()
+            anchor_sectors[sector_key] += 1
+            exchange_key = (metadata.exchange or "").upper().strip()
+            if exchange_key:
+                anchor_exchanges.setdefault(sector_key, set()).add(exchange_key)
+        ordered_sectors = sorted(sector_filters) or list(anchor_sectors)
+        if not ordered_sectors:
+            return []
+        seen = set(base_tickers)
+        buckets: dict[str, list[str]] = {sector: [] for sector in ordered_sectors}
+        for row in universe_rows:
+            ticker = str(row.get("ticker") or "").upper().strip()
+            sector = str(row.get("sector") or "").upper().strip()
+            if not ticker or ticker in seen or sector not in buckets:
+                continue
+            exchange = str(row.get("exchange") or "").upper().strip()
+            priority = 0 if exchange and exchange in anchor_exchanges.get(sector, set()) else 1
+            buckets[sector].append((priority, ticker))
+        for sector, entries in buckets.items():
+            entries.sort(key=lambda item: item)
+            buckets[sector] = [ticker for _priority, ticker in entries]
+
+        sector_order = sorted(
+            ordered_sectors,
+            key=lambda sector: (-anchor_sectors.get(sector, 0), sector),
+        )
+        selected: list[str] = []
+        while len(selected) < limit and any(buckets.get(sector) for sector in sector_order):
+            for sector in sector_order:
+                if not buckets.get(sector):
                     continue
-                selected.append(ticker)
-            elif comparison_universe == "candidate_universe_subset":
-                if ticker in portfolio:
-                    continue
-                if sector_filters and sector not in sector_filters:
-                    continue
-                selected.append(ticker)
-            if len(selected) >= limit:
-                break
-        combined = custom_tickers + portfolio + selected
-        return [ticker for ticker in dict.fromkeys(combined) if ticker][:limit]
+                selected.append(buckets[sector].pop(0))
+                if len(selected) >= limit:
+                    break
+        return selected
+
+    def _candidate_subset_tickers(
+        self,
+        *,
+        universe_rows: list[dict[str, Any]],
+        base_tickers: list[str],
+        sector_filters: set[str],
+        objective: str,
+        portfolio_sector_weights: dict[str, float],
+        limit: int,
+    ) -> list[str]:
+        if limit <= 0:
+            return []
+        shortlist = shortlist_candidate_universe_rows(
+            all_rows=universe_rows,
+            current_tickers=set(base_tickers),
+            portfolio_sector_weights=portfolio_sector_weights,
+            objective=objective,
+            preferred_sectors=sorted(sector_filters) or None,
+            max_candidates=limit,
+        )
+        return [str(row.get("ticker") or "").upper().strip() for row in shortlist["candidates"]]
+
+    def _derived_sector_weights(self, tickers: list[str]) -> dict[str, float]:
+        if self.ticker_metadata_service is None or not tickers:
+            return {}
+        counts: Counter[str] = Counter()
+        for ticker in tickers:
+            metadata = self.ticker_metadata_service.get(ticker)
+            if metadata is None or not metadata.sector:
+                continue
+            counts[metadata.sector.upper().strip()] += 1
+        total = sum(counts.values())
+        if total == 0:
+            return {}
+        return {sector: count / total for sector, count in counts.items()}
 
     async def _fundamentals_for_ticker(self, *, ticker: str, cik: str | None) -> dict[str, float | None]:
         if self.feature_store is not None:
